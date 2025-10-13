@@ -1,36 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>disable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="DTOs\Response\" />
-    <Folder Include="DTOs\Request\" />
-    <Folder Include="Models\" />
-    <Folder Include="Middleware\" />
-    <Folder Include="Mappers\" />
-    <Folder Include="Extensions\" />
-    <Folder Include="Helpers\" />
-    <Folder Include="Constants\" />
-    <Folder Include="Exceptions\" />
-    <Folder Include="Scripts\" />
-    <Folder Include="Repositories\Implementation\" />
-    <Folder Include="Repositories\Interfaces\" />
-    <Folder Include="Services\Interfaces\" />
-    <Folder Include="Services\Implementation\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Controllers\" />
+		<Folder Include="DTOs\Response\" />
+		<Folder Include="DTOs\Request\" />
+		<Folder Include="Models\" />
+		<Folder Include="Middleware\" />
+		<Folder Include="Mappers\" />
+		<Folder Include="Extensions\" />
+		<Folder Include="Helpers\" />
+		<Folder Include="Constants\" />
+		<Folder Include="Exceptions\" />
+		<Folder Include="Scripts\" />
+		<Folder Include="Repositories\Implementation\" />
+		<Folder Include="Repositories\Interfaces\" />
+		<Folder Include="Services\Interfaces\" />
+		<Folder Include="Services\Implementation\" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="Scripts\**\*.sql">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.1.66" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+		<PackageReference Include="Npgsql" Version="9.0.4" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
 
 </Project>

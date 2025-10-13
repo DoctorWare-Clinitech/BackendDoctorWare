@@ -21,6 +21,7 @@ constructor.Host.UseSerilog();
 // ========================================
 constructor.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 constructor.Services.AddScoped<DatabaseInitializer>();
+constructor.Services.AddScoped<EjecutorScriptsSQL>(); // ✅ Ya lo tienes
 
 // ========================================
 // REPOSITORIOS
@@ -29,9 +30,9 @@ constructor.Services.AddScoped<DatabaseInitializer>();
 //constructor.Services.AddScoped<IRepositorioProducto, RepositorioProducto>();
 //constructor.Services.AddScoped<IRepositorioCategoria, RepositorioCategoria>();
 
-//// ========================================
-//// SERVICIOS
-//// ========================================
+// ========================================
+// SERVICIOS
+// ========================================
 //constructor.Services.AddScoped<IServicioProducto, ServicioProducto>();
 //constructor.Services.AddScoped<IServicioCategoria, ServicioCategoria>();
 
@@ -92,20 +93,44 @@ constructor.Services.AddOpenApi(opciones =>
 var app = constructor.Build();
 
 // ========================================
-// VERIFICAR CONEXIÓN A BASE DE DATOS
+// INICIALIZACIÓN DE BASE DE DATOS
 // ========================================
-try
+if (app.Environment.IsDevelopment())
 {
-    using var alcance = app.Services.CreateScope();
-    var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    try
+    {
+        using var alcance = app.Services.CreateScope();
+        
+        var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
+        await inicializador.InitializeDatabaseAsync();
 
-    Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
-    await inicializador.InitializeDatabaseAsync();
+        // 2. Ejecutar scripts SQL 👈 NUEVO
+        var ejecutorScripts = alcance.ServiceProvider.GetRequiredService<EjecutorScriptsSQL>();
+        await ejecutorScripts.EjecutarScriptsAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, LogMessages.CRITICAL_DATABASE_CONNECTION_ERROR);
+        throw;
+    }
 }
-catch (Exception ex)
+else
 {
-    Log.Fatal(ex, LogMessages.CRITICAL_DATABASE_CONNECTION_ERROR);
-    throw;
+    // En producción solo verificar conexión
+    try
+    {
+        using var alcance = app.Services.CreateScope();
+        var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+
+        Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
+        await inicializador.InitializeDatabaseAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, LogMessages.CRITICAL_DATABASE_CONNECTION_ERROR);
+        throw;
+    }
 }
 
 // ========================================
@@ -128,7 +153,7 @@ app.MapGet("/", (IConfiguration config, IWebHostEnvironment env) => Results.Json
     version = "v1",
     ambiente = env.EnvironmentName,
     baseUrl = config["BaseUrl"],
-    descripcion = "AAPI con Dapper, PostgreSQL y arquitectura en capas",
+    descripcion = "API con Dapper, PostgreSQL y arquitectura en capas",
     documentacion = "/openapi/v1.json",
     endpoints = new
     {

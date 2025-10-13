@@ -28,6 +28,18 @@ namespace DoctorWare.Constants
 
         // Fatal
         public const string CRITICAL_DATABASE_CONNECTION_ERROR = "Error crítico al conectar con la base de datos";
-        public const string APPLICATION_STARTUP_ERROR = "La aplicación falló al iniciar";
+        public const string APPLICATION_STARTUP_ERROR = "La aplicación falló al iniciar";       
+
+        //Scripts SQL
+        public const string STARTING_SQL_SCRIPTS = "Iniciando ejecución de scripts SQL";
+        public const string SQL_SCRIPTS_FOUND = "Se encontraron {Cantidad} script(s) SQL";
+        public const string EXECUTING_SCRIPT = "Ejecutando: {Archivo}";
+        public const string SCRIPT_EXECUTED_SUCCESS = "{Archivo} ejecutado correctamente";
+        public const string SCRIPT_ALREADY_EXECUTED = "{Archivo} ya fue ejecutado anteriormente";
+        public const string SCRIPT_EXECUTION_ERROR = "Error al ejecutar {Archivo}";
+        public const string SQL_SCRIPTS_COMPLETED = "Ejecución de scripts SQL completada";
+        public const string SCRIPTS_FOLDER_NOT_FOUND = "La carpeta Scripts no existe en: {Ruta}";
+        public const string NO_SQL_SCRIPTS_FOUND = "No se encontraron archivos SQL en la carpeta Scripts";
+
     }
 }
