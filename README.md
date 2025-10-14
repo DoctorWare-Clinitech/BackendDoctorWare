@@ -41,6 +41,34 @@ CALL crear_columna('public', 'ROLES', 'nombre', 'VARCHAR(50) NOT NULL UNIQUE');
 CALL crear_columna('public', 'ROLES', 'activo', 'BOOLEAN DEFAULT TRUE');
 ```
 
+**Tipos de Datos Comunes en PostgreSQL:**
+
+A continuación una lista de tipos de datos comunes que se pueden usar en el parámetro `p_definicion`:
+
+*   **Tipos de Caracteres:**
+    *   `VARCHAR(n)`: Cadena de caracteres de longitud variable con un límite `n`.
+    *   `TEXT`: Cadena de caracteres de longitud ilimitada.
+
+*   **Tipos Numéricos:**
+    *   `INTEGER`: Número entero de 4 bytes.
+    *   `BIGINT`: Número entero de 8 bytes (para números muy grandes).
+    *   `NUMERIC(p, s)`: Número decimal exacto con `p` dígitos en total y `s` dígitos después del punto decimal.
+    *   `SERIAL`: Alias de `INTEGER` autoincremental, ideal para claves primarias (aunque `crear_tabla` ya lo hace automáticamente).
+    *   `BIGSERIAL`: Alias de `BIGINT` autoincremental.
+
+*   **Tipos de Fecha y Hora:**
+    *   `DATE`: Almacena solo la fecha.
+    *   `TIME`: Almacena solo la hora del día.
+    *   `TIMESTAMP`: Almacena fecha y hora, sin zona horaria.
+    *   `TIMESTAMPTZ`: Almacena fecha y hora, con zona horaria (recomendado para servidores).
+
+*   **Tipos Booleanos:**
+    *   `BOOLEAN`: Almacena valores `TRUE` o `FALSE`.
+
+*   **Otros Tipos Útiles:**
+    *   `JSON`, `JSONB`: Para almacenar datos en formato JSON (`JSONB` es generalmente preferido).
+    *   `UUID`: Para almacenar identificadores únicos universales.
+
 ### 3. `crear_fk`
 
 Crea una columna de clave foránea (FK) y su respectiva constraint. El procedimiento determina automáticamente el nombre de la columna FK basándose en el nombre de la tabla padre (`id_<nombre_tabla_padre>`).
