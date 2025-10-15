@@ -2,8 +2,6 @@
 DO $$
 BEGIN
 
-    RAISE NOTICE 'Iniciando creación de tablas para DoctorWare...';
-
     -- TIPOS_DOCUMENTO
     CALL crear_tabla('public', 'TIPOS_DOCUMENTO');
     CALL crear_columna('public', 'TIPOS_DOCUMENTO', 'codigo', 'VARCHAR(20) NOT NULL UNIQUE');
