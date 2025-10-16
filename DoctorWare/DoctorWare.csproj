@@ -10,13 +10,13 @@
 		<Folder Include="Controllers\" />
 		<Folder Include="DTOs\Response\" />
 		<Folder Include="DTOs\Request\" />
-		<Folder Include="Models\" />
 		<Folder Include="Middleware\" />
 		<Folder Include="Mappers\" />
 		<Folder Include="Extensions\" />
 		<Folder Include="Helpers\" />
 		<Folder Include="Constants\" />
 		<Folder Include="Exceptions\" />
+		<Folder Include="Models\" />
 		<Folder Include="Repositories\Implementation\" />
 		<Folder Include="Repositories\Interfaces\" />
 		<Folder Include="Services\Interfaces\" />
