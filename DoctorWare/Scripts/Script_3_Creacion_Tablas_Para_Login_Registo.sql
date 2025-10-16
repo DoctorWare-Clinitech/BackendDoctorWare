@@ -138,7 +138,7 @@ BEGIN
     CALL agregar_versionado('public', 'PROFESIONALES');
     CALL crear_indice('public', 'PROFESIONALES', 'ID_PERSONAS', 'btree', TRUE);
 
-    --PROFECIONAL_ESPECIALIDADES
+    --PROFESIONAL_ESPECIALIDADES
     CALL crear_tabla('public', 'PROFESIONAL_ESPECIALIDADES');
     CALL crear_fk('public', 'PROFESIONAL_ESPECIALIDADES','PROFESIONALES');
     CALL crear_fk('public', 'PROFESIONAL_ESPECIALIDADES','ESPECIALIDADES');
