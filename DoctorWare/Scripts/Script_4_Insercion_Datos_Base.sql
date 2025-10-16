@@ -5,199 +5,177 @@
 -- =====================================
 -- TIPOS_DOCUMENTO
 -- =====================================
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'DNI', 'Documento Nacional de Identidad' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'DNI');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'LE', 'Libreta de Enrolamiento' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'LE');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'LC', 'Libreta Cívica' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'LC');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'CI', 'Cédula de Identidad' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'CI');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'PAS', 'Pasaporte' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'PAS');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'CUIL', 'Código Único de Identificación Laboral' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'CUIL');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'CUIT', 'Código Único de Identificación Tributaria' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'CUIT');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'RUN', 'Rol Único Nacional (Chile)' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'RUN');
-INSERT INTO public.tipos_documento (codigo, nombre)
-SELECT 'CE', 'Carné de Extranjería' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_documento WHERE codigo = 'CE');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'DNI', 'Documento Nacional de Identidad' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'DNI');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'LE', 'Libreta de Enrolamiento' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'LE');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'LC', 'Libreta Cívica' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'LC');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'CI', 'Cédula de Identidad' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'CI');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'PAS', 'Pasaporte' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'PAS');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'CUIL', 'Código Único de Identificación Laboral' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'CUIL');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'CUIT', 'Código Único de Identificación Tributaria' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'CUIT');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'RUN', 'Rol Único Nacional (Chile)' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'RUN');
+INSERT INTO public."TIPOS_DOCUMENTO" ("CODIGO", "NOMBRE")
+SELECT 'CE', 'Carné de Extranjería' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_DOCUMENTO" WHERE "CODIGO" = 'CE');
 
 -- =====================================
 -- GENEROS
 -- =====================================
-INSERT INTO public.generos (nombre)
-SELECT 'Masculino' WHERE NOT EXISTS (SELECT 1 FROM public.generos WHERE nombre = 'Masculino');
-INSERT INTO public.generos (nombre)
-SELECT 'Femenino' WHERE NOT EXISTS (SELECT 1 FROM public.generos WHERE nombre = 'Femenino');
-INSERT INTO public.generos (nombre)
-SELECT 'Otro' WHERE NOT EXISTS (SELECT 1 FROM public.generos WHERE nombre = 'Otro');
-INSERT INTO public.generos (nombre)
-SELECT 'No Binario' WHERE NOT EXISTS (SELECT 1 FROM public.generos WHERE nombre = 'No Binario');
-INSERT INTO public.generos (nombre)
-SELECT 'Prefiere no decirlo' WHERE NOT EXISTS (SELECT 1 FROM public.generos WHERE nombre = 'Prefiere no decirlo');
+INSERT INTO public."GENEROS" ("NOMBRE")
+SELECT 'Masculino' WHERE NOT EXISTS (SELECT 1 FROM public."GENEROS" WHERE "NOMBRE" = 'Masculino');
+INSERT INTO public."GENEROS" ("NOMBRE")
+SELECT 'Femenino' WHERE NOT EXISTS (SELECT 1 FROM public."GENEROS" WHERE "NOMBRE" = 'Femenino');
+INSERT INTO public."GENEROS" ("NOMBRE")
+SELECT 'Otro' WHERE NOT EXISTS (SELECT 1 FROM public."GENEROS" WHERE "NOMBRE" = 'Otro');
+INSERT INTO public."GENEROS" ("NOMBRE")
+SELECT 'No Binario' WHERE NOT EXISTS (SELECT 1 FROM public."GENEROS" WHERE "NOMBRE" = 'No Binario');
+INSERT INTO public."GENEROS" ("NOMBRE")
+SELECT 'Prefiere no decirlo' WHERE NOT EXISTS (SELECT 1 FROM public."GENEROS" WHERE "NOMBRE" = 'Prefiere no decirlo');
 
 -- =====================================
 -- ESTADOS_USUARIO
 -- =====================================
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Activo' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Activo');
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Inactivo' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Inactivo');
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Pendiente de Confirmación' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Pendiente de Confirmación');
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Bloqueado' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Bloqueado');
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Suspendido' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Suspendido');
-INSERT INTO public.estados_usuario (nombre)
-SELECT 'Eliminado' WHERE NOT EXISTS (SELECT 1 FROM public.estados_usuario WHERE nombre = 'Eliminado');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Activo' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Activo');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Inactivo' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Inactivo');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Pendiente de Confirmación' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Pendiente de Confirmación');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Bloqueado' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Bloqueado');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Suspendido' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Suspendido');
+INSERT INTO public."ESTADOS_USUARIO" ("NOMBRE")
+SELECT 'Eliminado' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_USUARIO" WHERE "NOMBRE" = 'Eliminado');
 
 -- =====================================
 -- GRUPOS_SANGUINEOS
 -- =====================================
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'A+' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'A+');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'A-' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'A-');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'B+' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'B+');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'B-' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'B-');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'AB+' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'AB+');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'AB-' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'AB-');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'O+' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'O+');
-INSERT INTO public.grupos_sanguineos (nombre)
-SELECT 'O-' WHERE NOT EXISTS (SELECT 1 FROM public.grupos_sanguineos WHERE nombre = 'O-');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'A+' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'A+');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'A-' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'A-');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'B+' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'B+');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'B-' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'B-');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'AB+' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'AB+');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'AB-' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'AB-');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'O+' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'O+');
+INSERT INTO public."GRUPOS_SANGUINEOS" ("NOMBRE")
+SELECT 'O-' WHERE NOT EXISTS (SELECT 1 FROM public."GRUPOS_SANGUINEOS" WHERE "NOMBRE" = 'O-');
 
 -- =====================================
 -- ESTADOS_TURNO
 -- =====================================
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Programado' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Programado');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Confirmado' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Confirmado');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Cancelado por Paciente' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Cancelado por Paciente');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Cancelado por Profesional' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Cancelado por Profesional');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Ausente' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Ausente');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Atendido' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Atendido');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'Reprogramado' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'Reprogramado');
-INSERT INTO public.estados_turno (nombre)
-SELECT 'En Espera' WHERE NOT EXISTS (SELECT 1 FROM public.estados_turno WHERE nombre = 'En Espera');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Programado' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Programado');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Confirmado' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Confirmado');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Cancelado por Paciente' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Cancelado por Paciente');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Cancelado por Profesional' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Cancelado por Profesional');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Ausente' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Ausente');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Atendido' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Atendido');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'Reprogramado' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'Reprogramado');
+INSERT INTO public."ESTADOS_TURNO" ("NOMBRE")
+SELECT 'En Espera' WHERE NOT EXISTS (SELECT 1 FROM public."ESTADOS_TURNO" WHERE "NOMBRE" = 'En Espera');
 
 -- =====================================
 -- TIPOS_TURNO
 -- =====================================
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Consulta' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Consulta');
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Estudio' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Estudio');
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Cirugía' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Cirugía');
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Seguimiento' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Seguimiento');
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Vacunación' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Vacunación');
-INSERT INTO public.tipos_turno (nombre)
-SELECT 'Control General' WHERE NOT EXISTS (SELECT 1 FROM public.tipos_turno WHERE nombre = 'Control General');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Consulta' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Consulta');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Estudio' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Estudio');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Cirugía' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Cirugía');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Seguimiento' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Seguimiento');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Vacunación' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Vacunación');
+INSERT INTO public."TIPOS_TURNO" ("NOMBRE")
+SELECT 'Control General' WHERE NOT EXISTS (SELECT 1 FROM public."TIPOS_TURNO" WHERE "NOMBRE" = 'Control General');
 
 -- =====================================
 -- MEDICAMENTOS
 -- =====================================
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Ibuprofeno', 'Actron' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Ibuprofeno');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Paracetamol', 'Tafirol' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Paracetamol');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Amoxicilina', 'Amoxidal' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Amoxicilina');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Loratadina', 'Clarityne' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Loratadina');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Omeprazol', 'Gastec' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Omeprazol');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Losartán', 'Cozaar' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Losartán');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Metformina', 'Glucophage' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Metformina');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Simvastatina', 'Zocor' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Simvastatina');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Salbutamol', 'Ventolin' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Salbutamol');
-INSERT INTO public.medicamentos (nombre_generico, nombre_comercial)
-SELECT 'Clopidogrel', 'Plavix' WHERE NOT EXISTS (SELECT 1 FROM public.medicamentos WHERE nombre_generico = 'Clopidogrel');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Ibuprofeno', 'Actron' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Ibuprofeno');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Paracetamol', 'Tafirol' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Paracetamol');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Amoxicilina', 'Amoxidal' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Amoxicilina');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Loratadina', 'Clarityne' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Loratadina');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Omeprazol', 'Gastec' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Omeprazol');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Losartán', 'Cozaar' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Losartán');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Metformina', 'Glucophage' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Metformina');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Simvastatina', 'Zocor' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Simvastatina');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Salbutamol', 'Ventolin' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Salbutamol');
+INSERT INTO public."MEDICAMENTOS" ("NOMBRE_GENERICO", "NOMBRE_COMERCIAL")
+SELECT 'Clopidogrel', 'Plavix' WHERE NOT EXISTS (SELECT 1 FROM public."MEDICAMENTOS" WHERE "NOMBRE_GENERICO" = 'Clopidogrel');
 
 -- =====================================
 -- ALERGIAS
 -- =====================================
-INSERT INTO public.alergias (nombre)
-SELECT 'Polen' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Polen');
-INSERT INTO public.alergias (nombre)
-SELECT 'Ácaros del polvo' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Ácaros del polvo');
-INSERT INTO public.alergias (nombre)
-SELECT 'Maní' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Maní');
-INSERT INTO public.alergias (nombre)
-SELECT 'Mariscos' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Mariscos');
-INSERT INTO public.alergias (nombre)
-SELECT 'Penicilina' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Penicilina');
-INSERT INTO public.alergias (nombre)
-SELECT 'Látex' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Látex');
-INSERT INTO public.alergias (nombre)
-SELECT 'Picaduras de Abeja' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Picaduras de Abeja');
-INSERT INTO public.alergias (nombre)
-SELECT 'Frutilla' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Frutilla');
-INSERT INTO public.alergias (nombre)
-SELECT 'Chocolate' WHERE NOT EXISTS (SELECT 1 FROM public.alergias WHERE nombre = 'Chocolate');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Polen' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Polen');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Ácaros del polvo' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Ácaros del polvo');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Maní' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Maní');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Mariscos' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Mariscos');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Penicilina' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Penicilina');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Látex' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Látex');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Picaduras de Abeja' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Picaduras de Abeja');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Frutilla' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Frutilla');
+INSERT INTO public."ALERGIAS" ("NOMBRE")
+SELECT 'Chocolate' WHERE NOT EXISTS (SELECT 1 FROM public."ALERGIAS" WHERE "NOMBRE" = 'Chocolate');
 
 -- =====================================
 -- CIRUGIAS
 -- =====================================
-INSERT INTO public.cirugias (nombre)
-SELECT 'Apendicectomía' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Apendicectomía');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Colecistectomía' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Colecistectomía');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Hernioplastia' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Hernioplastia');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Cesárea' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Cesárea');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Reemplazo de cadera' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Reemplazo de cadera');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Bypass gástrico' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Bypass gástrico');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Cirugía de columna' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Cirugía de columna');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Amigdalectomía' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Amigdalectomía');
-INSERT INTO public.cirugias (nombre)
-SELECT 'Cataratas' WHERE NOT EXISTS (SELECT 1 FROM public.cirugias WHERE nombre = 'Cataratas');
-
--- =====================================
--- CONDICIONES_CRONICAS
--- =====================================
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Hipertensión Arterial' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Hipertensión Arterial');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Diabetes Mellitus Tipo 2' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Diabetes Mellitus Tipo 2');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Asma' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Asma');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Hipotiroidismo' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Hipotiroidismo');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Artritis Reumatoide' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Artritis Reumatoide');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'EPOC' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'EPOC');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Insuficiencia Cardíaca' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Insuficiencia Cardíaca');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Enfermedad Celíaca' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Enfermedad Celíaca');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Obesidad' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Obesidad');
-INSERT INTO public.condiciones_cronicas (nombre)
-SELECT 'Depresión' WHERE NOT EXISTS (SELECT 1 FROM public.condiciones_cronicas WHERE nombre = 'Depresión');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Apendicectomía' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Apendicectomía');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Colecistectomía' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Colecistectomía');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Hernioplastia' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Hernioplastia');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Cesárea' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Cesárea');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Reemplazo de cadera' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Reemplazo de cadera');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Bypass gástrico' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Bypass gástrico');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Cirugía de corazón' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Cirugía de corazón');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Cirugía ocular' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Cirugía ocular');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Cirugía ortopédica' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Cirugía ortopédica');
+INSERT INTO public."CIRUGIAS" ("NOMBRE")
+SELECT 'Tonsilectomía' WHERE NOT EXISTS (SELECT 1 FROM public."CIRUGIAS" WHERE "NOMBRE" = 'Tonsilectomía');

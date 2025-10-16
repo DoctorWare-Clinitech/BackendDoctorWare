@@ -105,7 +105,7 @@ if (app.Environment.IsDevelopment())
         Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
         await inicializador.InitializeDatabaseAsync();
 
-        // 2. Ejecutar scripts SQL 👈 NUEVO
+        // 2. Ejecutar scripts SQL
         var ejecutorScripts = alcance.ServiceProvider.GetRequiredService<EjecutorScriptsSQL>();
         await ejecutorScripts.EjecutarScriptsAsync();
     }
