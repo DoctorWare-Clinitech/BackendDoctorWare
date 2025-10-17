@@ -1,7 +1,10 @@
-﻿using DoctorWare.Data;
 using DoctorWare.Constants;
+using DoctorWare.Data;
 using DoctorWare.Data.Implementation;
 using DoctorWare.Data.Interfaces;
+using DoctorWare.Extensions;
+using DoctorWare.Health;
+using DoctorWare.Middleware;
 using Serilog;
 
 var constructor = WebApplication.CreateBuilder(args);
@@ -57,6 +60,7 @@ constructor.Services.AddCors(opciones =>
 // CONFIGURAR CONTROLLERS Y OPENAPI
 // ========================================
 constructor.Services.AddControllers();
+constructor.Services.AddStandardizedApiBehavior();
 
 constructor.Services.AddOpenApi(opciones =>
 {
@@ -90,6 +94,10 @@ constructor.Services.AddOpenApi(opciones =>
     });
 });
 
+// Health checks (DB)
+constructor.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database");
+
 var app = constructor.Build();
 
 // ========================================
@@ -100,7 +108,7 @@ if (app.Environment.IsDevelopment())
     try
     {
         using var alcance = app.Services.CreateScope();
-        
+
         var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
         Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
         await inicializador.InitializeDatabaseAsync();
@@ -139,8 +147,11 @@ else
 
 // Mapear OpenAPI
 app.MapOpenApi();
+// Health endpoint
+app.MapHealthChecks("/health");
 
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("PermitirAngular");
 app.UseAuthorization();
@@ -157,8 +168,6 @@ app.MapGet("/", (IConfiguration config, IWebHostEnvironment env) => Results.Json
     documentacion = "/openapi/v1.json",
     endpoints = new
     {
-        //productos = "/api/productos",
-        //categorias = "/api/categorias"
     }
 }))
 .WithName("Inicio")

@@ -33,3 +33,26 @@ La solución está organizada siguiendo una arquitectura limpia y modular:
 1.  Configurar la cadena de conexión a la base de datos PostgreSQL en el archivo `appsettings.json`.
 2.  Al iniciar la aplicación, se ejecutarán automáticamente los scripts de la base de datos para crear o actualizar el esquema.
 3.  La API estará disponible en la URL configurada en `Properties/launchSettings.json`.
+
+## Puertos y ejecución local
+
+- HTTP: `http://localhost:5000`
+- HTTPS: `https://localhost:5001`
+- `BaseUrl` en `appsettings.json` y `appsettings.Development.json` apunta a `http://localhost:5000`.
+
+Ejecución con perfiles:
+- `dotnet run --launch-profile http`
+- `dotnet run --launch-profile https`
+
+Forzar puertos fuera de perfiles (por ejemplo en producción o hosting simple):
+- Windows (PowerShell): `setx ASPNETCORE_URLS "https://localhost:5001;http://localhost:5000"`
+- Linux/macOS (bash): `export ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"`
+
+## Prácticas aplicadas
+
+- Middleware global de errores: respuestas homogéneas (ApiResponse) y trazas solo en Development.
+- Validación de modelo estandarizada: 400 con lista de errores por campo.
+- Health checks: endpoint `GET /health` con verificación de DB (`SELECT 1`).
+- Ejecución de scripts SQL idempotente: crea `schema_migrations` y registra scripts ya ejecutados.
+- Nullability habilitado (`<Nullable>enable</Nullable>`) y analizadores (`AnalysisLevel=latest`).
+- EditorConfig para codificación UTF‑8 y estilo C# consistente.

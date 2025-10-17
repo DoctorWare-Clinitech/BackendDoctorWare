@@ -1,4 +1,3 @@
-
 namespace DoctorWare.Constants
 {
     public static class LogMessages
@@ -28,7 +27,7 @@ namespace DoctorWare.Constants
 
         // Fatal
         public const string CRITICAL_DATABASE_CONNECTION_ERROR = "Error crítico al conectar con la base de datos";
-        public const string APPLICATION_STARTUP_ERROR = "La aplicación falló al iniciar";       
+        public const string APPLICATION_STARTUP_ERROR = "La aplicación falló al iniciar";
 
         //Scripts SQL
         public const string STARTING_SQL_SCRIPTS = "Iniciando ejecución de scripts SQL";

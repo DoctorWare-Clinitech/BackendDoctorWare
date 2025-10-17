@@ -2,9 +2,9 @@
 -- Función para trigger de versionado
 -- =====================================================
 CREATE OR REPLACE FUNCTION fn_actualizar_version()
-RETURNS TRIGGER AS $$
+RETURNS trigger AS $$
 BEGIN
-    NEW."VERSION" = NOW();
+    NEW."ULTIMA_ACTUALIZACION" = NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

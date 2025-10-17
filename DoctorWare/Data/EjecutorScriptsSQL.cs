@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using DoctorWare.Constants;
 using DoctorWare.Data.Interfaces;
 using System.Diagnostics;
@@ -53,6 +53,14 @@ namespace DoctorWare.Data
                 using System.Data.IDbConnection conexion = conexionDB.CreateConnection();
                 conexion.Open();
 
+                // Tabla de control para registrar scripts ejecutados (idempotencia)
+                const string createMigrationsTable = @"CREATE TABLE IF NOT EXISTS schema_migrations (
+                    id SERIAL PRIMARY KEY,
+                    script_name TEXT NOT NULL UNIQUE,
+                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );";
+                await conexion.ExecuteAsync(createMigrationsTable);
+
                 int scriptEjecutados = 0;
                 int scriptConErrores = 0;
 
@@ -72,14 +80,29 @@ namespace DoctorWare.Data
                             continue;
                         }
 
+                        // Si ya fue ejecutado, saltar
+                        int yaEjecutado = await conexion.ExecuteScalarAsync<int>(
+                            "SELECT COUNT(1) FROM schema_migrations WHERE script_name = @name",
+                            new { name = nombreArchivo });
+                        if (yaEjecutado > 0)
+                        {
+                            logger.LogInformation(LogMessages.SCRIPT_ALREADY_EXECUTED, nombreArchivo);
+                            continue;
+                        }
+
+                        // Ejecutar script en transacción y registrar
+                        using var tx = conexion.BeginTransaction();
                         Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                        await conexion.ExecuteAsync(scriptSQL, commandTimeout: 300);
+                        await conexion.ExecuteAsync(scriptSQL, commandTimeout: 300, transaction: tx);
+                        await conexion.ExecuteAsync(
+                            "INSERT INTO schema_migrations (script_name) VALUES (@name)",
+                            new { name = nombreArchivo }, tx);
+                        // IDbTransaction no expone CommitAsync; usar Commit sincrónico
+                        tx.Commit();
                         stopwatch.Stop();
 
                         scriptEjecutados++;
-
-                        logger.LogInformation(LogMessages.SCRIPT_EXECUTED_SUCCESS + " ({Tiempo}ms)",
-                            nombreArchivo, stopwatch.ElapsedMilliseconds);
+                        logger.LogInformation(LogMessages.SCRIPT_EXECUTED_SUCCESS + " ({Tiempo}ms)", nombreArchivo, stopwatch.ElapsedMilliseconds);
                     }
                     catch (Exception ex)
                     {
