@@ -1,4 +1,4 @@
-﻿using DoctorWare.Constants;
+using DoctorWare.Constants;
 using DoctorWare.Data.Interfaces;
 using DoctorWare.Exceptions;
 using Npgsql;
@@ -16,7 +16,7 @@ namespace DoctorWare.Data.Implementation
             ILogger<DbConnectionFactory> logger)
         {
             this.logger = logger;
-           
+
             cadenaConexion = configuracion.GetConnectionString("ConexionPredeterminada")
                 ?? throw new ArgumentNullException(nameof(configuracion),
                     "Connection string 'ConexionPredeterminada' no está configurada en appsettings.json");

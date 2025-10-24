@@ -60,40 +60,41 @@ namespace DoctorWare.Repositories.Implementation
         /// <inheritdoc />
         public virtual async Task<T?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            using var con = CreateConnection();
-            var sql = $"select {SelectColumns} from {Table} where {Key} = @id";
+            using IDbConnection con = CreateConnection();
+            string sql = $"select {SelectColumns} from {Table} where {Key} = @id";
             return await con.QuerySingleOrDefaultAsync<T>(sql, new { id });
         }
 
         /// <inheritdoc />
         public virtual async Task<DoctorWare.DTOs.Response.PagedResult<T>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
         {
-            using var con = CreateConnection();
-            var offset = (page - 1) * pageSize;
-            var items = await con.QueryAsync<T>($"select {SelectColumns} from {Table} order by {Key} offset @offset limit @limit",
+            using IDbConnection con = CreateConnection();
+            int offset = (page - 1) * pageSize;
+            var itemsEnumerable = await con.QueryAsync<T>($"select {SelectColumns} from {Table} order by {Key} offset @offset limit @limit",
                 new { offset, limit = pageSize });
-            var total = await con.ExecuteScalarAsync<int>($"select count(*) from {Table}");
-            return new DoctorWare.DTOs.Response.PagedResult<T>(items.ToList(), total, page, pageSize);
+            int total = await con.ExecuteScalarAsync<int>($"select count(*) from {Table}");
+            var items = itemsEnumerable.ToList();
+            return new DoctorWare.DTOs.Response.PagedResult<T>(items, total, page, pageSize);
         }
 
         /// <inheritdoc />
         public virtual async Task<T> InsertAsync(T entity, CancellationToken cancellationToken = default)
         {
-            using var con = CreateConnection();
+            using IDbConnection con = CreateConnection();
             return await con.QuerySingleAsync<T>(InsertSql, ToDb(entity));
         }
 
         /// <inheritdoc />
         public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
-            using var con = CreateConnection();
+            using IDbConnection con = CreateConnection();
             await con.ExecuteAsync(UpdateSql, ToDb(entity));
         }
 
         /// <inheritdoc />
         public virtual async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            using var con = CreateConnection();
+            using IDbConnection con = CreateConnection();
             await con.ExecuteAsync($"delete from {Table} where {Key} = @id", new { id });
         }
     }

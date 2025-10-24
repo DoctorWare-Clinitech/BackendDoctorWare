@@ -1,6 +1,84 @@
-@DoctorWare_HostAddress = http://localhost:5000
+@host_http = http://localhost:5000
+@host_https = https://localhost:5001
+@base = {{host_https}}
+@EMAIL = okijulian0791@gmail.com
+@PASSWORD = 1234567890
 
-GET {{DoctorWare_HostAddress}}/weatherforecast/
+### Health
+GET {{base}}/health
 Accept: application/json
 
-###
+### OpenAPI (Swagger JSON)
+GET {{base}}/swagger/v1/swagger.json
+Accept: application/json
+
+### Registrar usuario (vÃ¡lido)
+POST {{base}}/api/auth/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "nombre": "OSCAR",
+  "apellido": "JULIAN",
+  "email": "{{EMAIL}}",
+  "password": "{{PASSWORD}}",
+  "telefono": "3624511130",
+  "nroDocumento": "94910326",
+  "tipoDocumentoCodigo": "DNI",
+  "genero": "Prefiere no decirlo"
+}
+
+### @name login
+POST {{base}}/api/auth/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "{{EMAIL}}",
+  "password": "{{PASSWORD}}"
+}
+
+> {%
+// Guarda tokens globales para usarlos en otras requests
+try {
+  const body = JSON.parse(response.body);
+  const token = body.data?.token;
+  const refresh = body.data?.refreshToken;
+  if (token) client.global.set("access_token", token);
+  if (refresh) client.global.set("refresh_token", refresh);
+} catch (e) {
+  // Ignorar si la respuesta no es JSON (p.ej., error)
+}
+%}
+
+### @name refresh
+POST {{base}}/api/auth/refresh
+Accept: application/json
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+
+### Me (requiere bearer) - POST
+@access_token = {{access_token}}
+POST {{base}}/api/auth/me
+Authorization: Bearer {{access_token}}
+Accept: application/json
+
+### Registrar usuario (email duplicado -> 400)
+POST {{base}}/api/auth/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "apellido": "PÃ©rez",
+  "email": "{{EMAIL}}",
+  "password": "{{PASSWORD}}",
+  "telefono": "+54 9 11 1234-5678",
+  "nroDocumento": 12345678,
+  "tipoDocumentoCodigo": "DNI",
+  "genero": "Prefiere no decirlo"
+}
+

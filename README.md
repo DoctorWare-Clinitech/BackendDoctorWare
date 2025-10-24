@@ -2,57 +2,138 @@
 
 Backend para el sistema de gestión de consultorios médicos DoctorWare.
 
-## Descripción General
+## Actualización Rápida (compatibilidad con el frontend)
 
-Este repositorio contiene el código fuente del backend para DoctorWare, una aplicación diseñada para la administración de consultorios médicos. El sistema está construido con una arquitectura robusta utilizando .NET y PostgreSQL, y está diseñado para ser extensible y mantenible.
+- Respuestas JSON en camelCase habilitadas globalmente.
+- Tokens JWT incluyen claims `sub`, `email`, `name` (si está disponible) y `role`.
+- Endpoints de autenticación (forma plana, compatibles con el frontend Angular):
+  - POST `/api/auth/register` → `{ token, refreshToken, user, expiresIn }`
+  - POST `/api/auth/login` → `{ token, refreshToken, user, expiresIn }`
+  - POST `/api/auth/refresh` → `{ token, refreshToken, user, expiresIn }`
+  - GET  `/api/auth/me` → devuelve el `user` autenticado
+  - GET  `/api/auth/confirm-email?uid={id}&token={token}` → confirma email y redirige según config
+- Para alinear con el front por defecto, puedes ejecutar la API en `http://localhost:3000`:
 
-## Stack Tecnológico
-
-*   **Lenguaje:** C#
-*   **Framework:** ASP.NET Core
-*   **Base de Datos:** PostgreSQL
-*   **Acceso a Datos:** Dapper
+```
+dotnet run --project DoctorWare/DoctorWare.Api.csproj --urls http://localhost:3000
+```
 
 ## Estructura del Proyecto
 
-La solución está organizada siguiendo una arquitectura limpia y modular:
-
-*   `DoctorWare/`: Directorio principal del proyecto de ASP.NET Core.
-    *   `Controllers/`: Controladores de la API que exponen los endpoints.
-    *   `Services/`: Capa de servicio que contiene la lógica de negocio principal.
-    *   `Repositories/`: Capa de repositorio que abstrae el acceso a la base de datos.
-    *   `Data/`: Componentes de bajo nivel para la conexión a la base de datos y ejecución de scripts.
-    *   `Models/`: Entidades del dominio de la aplicación.
-    *   `DTOs/`: Objetos para la transferencia de datos entre las capas y la API.
-    *   `Scripts/`: Scripts SQL para la inicialización y migración del esquema de la base de datos.
-    *   `Program.cs`: Punto de entrada de la aplicación.
-*   `ER_DOCTORWARE.drawio.xml`: Diagrama Entidad-Relación que documenta el modelo de datos.
+- `DoctorWare/`: Proyecto ASP.NET Core
+  - `Controllers/`: Controladores con endpoints HTTP
+  - `Services/`: Lógica de negocio
+  - `Repositories/`: Acceso a datos (Dapper)
+  - `Data/`: Conexión a BD, salud y ejecución de scripts
+  - `Models/`: Entidades de dominio (mapeos a tablas)
+  - `DTOs/`: Contratos de entrada/salida
+  - `Mappers/`: Traducción de modelos a DTOs
+  - `Helpers/`: Utilidades transversales (claims, etc.)
+  - `Middleware/`: Manejo global de errores, logging, etc.
+  - `Program.cs`: Configuración de servicios y pipeline
 
 ## Puesta en Marcha
 
-1.  Configurar la cadena de conexión a la base de datos PostgreSQL en el archivo `appsettings.json`.
-2.  Al iniciar la aplicación, se ejecutarán automáticamente los scripts de la base de datos para crear o actualizar el esquema.
-3.  La API estará disponible en la URL configurada en `Properties/launchSettings.json`.
+1) Configura la cadena de conexión en `DoctorWare/appsettings.Development.json` → `ConnectionStrings:ConexionPredeterminada`.
+2) En Development, al iniciar se ejecutan los scripts SQL de `DoctorWare/Scripts` (idempotentes) y se verifica la conexión.
+3) Swagger disponible en `https://localhost:5001/swagger` o según el puerto configurado.
 
-## Puertos y ejecución local
+### Email de confirmación (dev)
 
-- HTTP: `http://localhost:5000`
-- HTTPS: `https://localhost:5001`
-- `BaseUrl` en `appsettings.json` y `appsettings.Development.json` apunta a `http://localhost:5000`.
+- Configura SMTP en `DoctorWare/appsettings.Development.json` sección `Email:Smtp`.
+- Configura `EmailConfirmation`:
+  - `TokenMinutes`: vigencia del token.
+  - `FrontendConfirmUrl`: opcional, URL del front para manejar la confirmación (se agregan `uid` y `token`).
+  - `BackendConfirmRedirectUrl`: adonde redirige el endpoint si se invoca directamente.
 
-Ejecución con perfiles:
-- `dotnet run --launch-profile http`
-- `dotnet run --launch-profile https`
+## Puertos y Ejecución Local
 
-Forzar puertos fuera de perfiles (por ejemplo en producción o hosting simple):
-- Windows (PowerShell): `setx ASPNETCORE_URLS "https://localhost:5001;http://localhost:5000"`
-- Linux/macOS (bash): `export ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"`
+- Valores por defecto:
+  - HTTP: `http://localhost:5000`
+  - HTTPS: `https://localhost:5001`
+- Variable `BaseUrl` en `appsettings*.json` apunta a `http://localhost:5000`.
+- Forzar puertos (ejemplos):
+  - PowerShell: `setx ASPNETCORE_URLS "https://localhost:5001;http://localhost:5000"`
+  - Bash: `export ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"`
 
-## Prácticas aplicadas
+## Autenticación y Swagger
 
-- Middleware global de errores: respuestas homogéneas (ApiResponse) y trazas solo en Development.
-- Validación de modelo estandarizada: 400 con lista de errores por campo.
-- Health checks: endpoint `GET /health` con verificación de DB (`SELECT 1`).
-- Ejecución de scripts SQL idempotente: crea `schema_migrations` y registra scripts ya ejecutados.
-- Nullability habilitado (`<Nullable>enable</Nullable>`) y analizadores (`AnalysisLevel=latest`).
-- EditorConfig para codificación UTF‑8 y estilo C# consistente.
+- JWT configurado en `DoctorWare/appsettings*.json` sección `Jwt` (Secret, Issuer, Audience, tiempos).
+- Endpoints de autenticación (compatibles con el frontend):
+  - POST `/api/auth/register` → `{ token, refreshToken, user, expiresIn }`
+  - POST `/api/auth/login` → `{ token, refreshToken, user, expiresIn }`
+  - POST `/api/auth/refresh` → `{ token, refreshToken, user, expiresIn }`
+  - GET  `/api/auth/me` → Perfil del usuario autenticado (requiere `Authorization: Bearer {token}`)
+- Serialización JSON: camelCase global.
+
+### ¿Qué es `/api/auth/me`?
+
+Devuelve el perfil del usuario autenticado leyendo el JWT del header `Authorization: Bearer {token}`.
+- Método: GET `/api/auth/me`
+- Body: no requerido
+- Uso típico: recuperar sesión al iniciar la app, validar el token y obtener datos del usuario.
+
+### Swagger UI
+
+- UI: `https://localhost:5001/swagger`
+- JSON: `https://localhost:5001/swagger/v1/swagger.json`
+
+## Pruebas Rápidas (REST Client)
+
+Archivo `DoctorWare/DoctorWare.http` con ejemplos de `login`, `refresh` y `me` (usar GET en `me`).
+
+## Uso desde Angular (ejemplos)
+
+- Base URL sugerida para integrar con este backend:
+
+```ts
+// FrontEndDoctorWare/src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiBaseUrl: 'http://localhost:3000/api',
+  jwtStorageKey: 'doctorware_token',
+  appName: 'DoctorWare',
+  logLevel: 'debug'
+};
+```
+
+- Servicio de autenticación (forma plana, sin ApiResponse):
+
+```ts
+// src/app/core/services/auth.service.ts (fragmento)
+interface AuthResult {
+  token: string;
+  refreshToken: string;
+  user: any; // coincide con el 'User' que espera el front
+  expiresIn: number;
+}
+
+login(email: string, password: string) {
+  return this.http.post<AuthResult>(`${this.base}/auth/login`, { email, password });
+}
+
+refresh(refreshToken: string) {
+  return this.http.post<AuthResult>(`${this.base}/auth/refresh`, { refreshToken });
+}
+
+me() {
+  return this.http.get<any>(`${this.base}/auth/me`);
+}
+```
+
+## CORS
+
+- Orígenes permitidos en Development (`DoctorWare/appsettings.Development.json`):
+  - `http://localhost:4200`, `http://localhost:4201`, `http://localhost:3000`
+
+## Buenas Prácticas Aplicadas
+
+- Middleware global de errores (respuestas homogéneas en producción y detalle en Development).
+- Health checks: `GET /health` con verificación de DB.
+- Ejecución de scripts SQL idempotente (control en tabla `schema_migrations`).
+- Nullability y analizadores habilitados.
+- Logging estructurado con Serilog.
+
+## Notas
+
+- Si al compilar aparece “archivo en uso”, detén instancias previas y ejecuta `dotnet clean` antes de compilar.

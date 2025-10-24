@@ -5,9 +5,12 @@ using DoctorWare.Data.Interfaces;
 using DoctorWare.Extensions;
 using DoctorWare.Health;
 using DoctorWare.Middleware;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
+using System.Reflection;
 
-var constructor = WebApplication.CreateBuilder(args);
+WebApplicationBuilder constructor = WebApplication.CreateBuilder(args);
 
 // ========================================
 // CONFIGURAR SERILOG (Lee de appsettings según ambiente)
@@ -29,20 +32,20 @@ constructor.Services.AddScoped<EjecutorScriptsSQL>(); // ✅ Ya lo tienes
 // ========================================
 // REPOSITORIOS
 // ========================================
-//constructor.Services.AddScoped(typeof(IRepositorioBase<>), typeof(RepositorioBase<>));
-//constructor.Services.AddScoped<IRepositorioProducto, RepositorioProducto>();
-//constructor.Services.AddScoped<IRepositorioCategoria, RepositorioCategoria>();
+constructor.Services.AddScoped<DoctorWare.Repositories.Interfaces.IUsuariosRepository, DoctorWare.Repositories.Implementation.UsuariosRepository>();
+constructor.Services.AddScoped<DoctorWare.Repositories.Interfaces.IPersonasRepository, DoctorWare.Repositories.Implementation.PersonasRepository>();
 
 // ========================================
 // SERVICIOS
 // ========================================
-//constructor.Services.AddScoped<IServicioProducto, ServicioProducto>();
-//constructor.Services.AddScoped<IServicioCategoria, ServicioCategoria>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IUserService, DoctorWare.Services.Implementation.UsersService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ITokenService, DoctorWare.Services.Implementation.TokenService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailSender, DoctorWare.Services.Implementation.SmtpEmailSender>();
 
 // ========================================
 // CORS (Lee los orígenes permitidos según ambiente)
 // ========================================
-var origenesPermitidos = constructor.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+string[] origenesPermitidos = constructor.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:4200" };
 
 constructor.Services.AddCors(opciones =>
@@ -57,48 +60,98 @@ constructor.Services.AddCors(opciones =>
 });
 
 // ========================================
-// CONFIGURAR CONTROLLERS Y OPENAPI
+// CONFIGURAR CONTROLLERS Y SWAGGER (simple)
 // ========================================
-constructor.Services.AddControllers();
-constructor.Services.AddStandardizedApiBehavior();
-
-constructor.Services.AddOpenApi(opciones =>
-{
-    opciones.AddDocumentTransformer((documento, contexto, token) =>
+constructor.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
     {
-        var baseUrl = constructor.Configuration["BaseUrl"] ?? "http://localhost:5000";
-        var ambiente = constructor.Environment.EnvironmentName;
-
-        documento.Info = new()
-        {
-            Title = "DoctorWareApi",
-            Version = "v1",
-            Description = $"API con Dapper, PostgreSQL y arquitectura en capas - Ambiente: {ambiente}",
-            Contact = new()
-            {
-                Name = "Clinitech",
-                Email = "support@Clinitech.com"
-            }
-        };
-
-        documento.Servers = new[]
-        {
-            new Microsoft.OpenApi.Models.OpenApiServer
-            {
-                Url = baseUrl,
-                Description = $"Servidor {ambiente}"
-            }
-        };
-
-        return Task.CompletedTask;
+        options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+        options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+        options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
     });
+constructor.Services.AddStandardizedApiBehavior();
+constructor.Services.AddEndpointsApiExplorer();
+constructor.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "DoctorWare API",
+        Version = "v1",
+        Description = "API con Dapper y PostgreSQL"
+    });
+
+    // Seguridad JWT (Bearer)
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Name = "Authorization",
+        Description = "Ingrese 'Bearer {token}'"
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    // Incluir comentarios XML para Swagger (controllers y tipos)
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
 });
 
 // Health checks (DB)
 constructor.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
 
-var app = constructor.Build();
+// ========================================
+// AUTHENTICACIÓN JWT
+// ========================================
+constructor.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwt = constructor.Configuration.GetSection("Jwt");
+    var secret = jwt["Secret"] ?? "dev-secret-change";
+    var issuer = jwt["Issuer"] ?? "DoctorWare";
+    var audience = jwt["Audience"] ?? "DoctorWare.Client";
+
+    options.MapInboundClaims = false;
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secret)),
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+        NameClaimType = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub
+    };
+});
+constructor.Services.AddAuthorization();
+
+WebApplication app = constructor.Build();
 
 // ========================================
 // INICIALIZACIÓN DE BASE DE DATOS
@@ -107,14 +160,14 @@ if (app.Environment.IsDevelopment())
 {
     try
     {
-        using var alcance = app.Services.CreateScope();
+        using IServiceScope alcance = app.Services.CreateScope();
 
-        var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        DatabaseInitializer inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
         Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
         await inicializador.InitializeDatabaseAsync();
 
         // 2. Ejecutar scripts SQL
-        var ejecutorScripts = alcance.ServiceProvider.GetRequiredService<EjecutorScriptsSQL>();
+        EjecutorScriptsSQL ejecutorScripts = alcance.ServiceProvider.GetRequiredService<EjecutorScriptsSQL>();
         await ejecutorScripts.EjecutarScriptsAsync();
     }
     catch (Exception ex)
@@ -128,8 +181,8 @@ else
     // En producción solo verificar conexión
     try
     {
-        using var alcance = app.Services.CreateScope();
-        var inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        using IServiceScope alcance = app.Services.CreateScope();
+        DatabaseInitializer inicializador = alcance.ServiceProvider.GetRequiredService<DatabaseInitializer>();
 
         Log.Information(LogMessages.CHECKING_DATABASE_CONNECTION, app.Environment.EnvironmentName);
         await inicializador.InitializeDatabaseAsync();
@@ -145,8 +198,17 @@ else
 // CONFIGURAR MIDDLEWARE
 // ========================================
 
-// Mapear OpenAPI
-app.MapOpenApi();
+// Swagger JSON + UI
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "DoctorWare API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// Compatibilidad: redirigir antiguo endpoint OpenAPI nativo al de Swashbuckle
+app.MapGet("/openapi/v1.json", () => Results.Redirect("/swagger/v1/swagger.json", permanent: false))
+   .ExcludeFromDescription();
 // Health endpoint
 app.MapHealthChecks("/health");
 
@@ -154,8 +216,24 @@ app.UseSerilogRequestLogging();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("PermitirAngular");
+app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+try
+{
+    app.MapControllers();
+}
+catch (ReflectionTypeLoadException ex)
+{
+    Log.Fatal(ex, "ReflectionTypeLoadException al mapear controllers");
+    if (ex.LoaderExceptions is not null)
+    {
+        foreach (var lex in ex.LoaderExceptions)
+        {
+            Log.Fatal(lex, "LoaderException: {Mensaje}", lex.Message);
+        }
+    }
+    throw;
+}
 
 // Endpoint raíz con información
 app.MapGet("/", (IConfiguration config, IWebHostEnvironment env) => Results.Json(new
@@ -165,7 +243,7 @@ app.MapGet("/", (IConfiguration config, IWebHostEnvironment env) => Results.Json
     ambiente = env.EnvironmentName,
     baseUrl = config["BaseUrl"],
     descripcion = "API con Dapper, PostgreSQL y arquitectura en capas",
-    documentacion = "/openapi/v1.json",
+    documentacion = "/swagger/v1/swagger.json",
     endpoints = new
     {
     }

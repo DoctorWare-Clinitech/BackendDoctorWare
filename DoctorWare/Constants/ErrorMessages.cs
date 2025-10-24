@@ -8,5 +8,10 @@ namespace DoctorWare.Constants
         public const string DB_CONNECTION_ERROR = "Error al crear la conexión con la base de datos.";
         public const string DB_CANNOT_CONNECT = "No se pudo conectar a la base de datos";
         public const string UNKNOWN = "Unknown";
+
+        // Auth / Usuarios
+        public const string EMAIL_ALREADY_REGISTERED = "El email ya está registrado.";
+        public const string INVALID_CREDENTIALS = "Credenciales inválidas.";
+        public const string INVALID_REFRESH_TOKEN = "Refresh token inválido o expirado.";
     }
 }

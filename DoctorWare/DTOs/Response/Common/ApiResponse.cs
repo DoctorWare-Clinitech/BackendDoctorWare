@@ -2,9 +2,9 @@ namespace DoctorWare.DTOs.Response
 {
     /// <summary>
     /// Contenedor estandarizado para respuestas de la API.
-    /// Incluye estado de éxito, datos, mensaje y un código de error opcional.
+    /// Incluye indicador de exito, datos, mensaje y un codigo de error opcional.
     /// </summary>
-    /// <typeparam name="T">Tipo del dato que retorna la operación.</typeparam>
+    /// <typeparam name="T">Tipo del dato retornado.</typeparam>
     public record ApiResponse<T>(bool Success, T? Data, string? Message = null, string? ErrorCode = null)
     {
         /// <summary>
@@ -18,7 +18,7 @@ namespace DoctorWare.DTOs.Response
         public static ApiResponse<T> Created(T data, string? message = null) => new(true, data, message);
 
         /// <summary>
-        /// Crea una respuesta de error con mensaje y código opcional.
+        /// Crea una respuesta de error con mensaje y codigo opcional.
         /// </summary>
         public static ApiResponse<T> Fail(string message, string? errorCode = null) => new(false, default, message, errorCode);
     }

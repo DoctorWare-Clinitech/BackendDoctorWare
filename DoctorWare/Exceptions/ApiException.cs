@@ -1,4 +1,3 @@
-
 namespace DoctorWare.Exceptions
 {
     public class ApiException : Exception
