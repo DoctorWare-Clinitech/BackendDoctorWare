@@ -1,139 +1,176 @@
-# BackendDoctorWare
+# DoctorWare API (Backend)
 
-Backend para el sistema de gestión de consultorios médicos DoctorWare.
+Backend ASP.NET Core + Dapper + PostgreSQL.
 
-## Actualización Rápida (compatibilidad con el frontend)
-
-- Respuestas JSON en camelCase habilitadas globalmente.
-- Tokens JWT incluyen claims `sub`, `email`, `name` (si está disponible) y `role`.
-- Endpoints de autenticación (forma plana, compatibles con el frontend Angular):
-  - POST `/api/auth/register` → `{ token, refreshToken, user, expiresIn }`
-  - POST `/api/auth/login` → `{ token, refreshToken, user, expiresIn }`
-  - POST `/api/auth/refresh` → `{ token, refreshToken, user, expiresIn }`
-  - GET  `/api/auth/me` → devuelve el `user` autenticado
-  - GET  `/api/auth/confirm-email?uid={id}&token={token}` → confirma email y redirige según config
-- Para alinear con el front por defecto, puedes ejecutar la API en `http://localhost:3000`:
+## Cómo ejecutar
+- Configura la base de datos: `BackendDoctorWare/DoctorWare/appsettings.Development.json` → `ConnectionStrings:ConexionPredeterminada`.
+- Ejecuta en `http://localhost:3000`:
 
 ```
-dotnet run --project DoctorWare/DoctorWare.Api.csproj --urls http://localhost:3000
+dotnet run --project BackendDoctorWare/DoctorWare/DoctorWare.Api.csproj --urls http://localhost:3000
 ```
 
-## Estructura del Proyecto
+- Swagger: `http://localhost:3000/swagger`
+- Health: `http://localhost:3000/health`
 
-- `DoctorWare/`: Proyecto ASP.NET Core
-  - `Controllers/`: Controladores con endpoints HTTP
-  - `Services/`: Lógica de negocio
-  - `Repositories/`: Acceso a datos (Dapper)
-  - `Data/`: Conexión a BD, salud y ejecución de scripts
-  - `Models/`: Entidades de dominio (mapeos a tablas)
-  - `DTOs/`: Contratos de entrada/salida
-  - `Mappers/`: Traducción de modelos a DTOs
-  - `Helpers/`: Utilidades transversales (claims, etc.)
-  - `Middleware/`: Manejo global de errores, logging, etc.
-  - `Program.cs`: Configuración de servicios y pipeline
+## APIs disponibles
 
-## Puesta en Marcha
+Autenticación
+- POST `/api/auth/register`
+  - Body JSON: `{ nombre, apellido, email, password, telefono?, nroDocumento, tipoDocumentoCodigo, genero }`
+  - Respuesta: `201 { message, requiresEmailConfirmation: true }`
+  - Campos requeridos: `nombre`, `apellido`, `email` (formato email), `password` (>= 6), `nroDocumento`, `tipoDocumentoCodigo` (p.ej. "DNI"), `genero`.
+  - Ejemplo request:
+    ```json
+    {
+      "nombre": "Ana",
+      "apellido": "Pérez",
+      "email": "ana@example.com",
+      "password": "Secreta1!",
+      "telefono": "",
+      "nroDocumento": 12345678,
+      "tipoDocumentoCodigo": "DNI",
+      "genero": "Femenino"
+    }
+    ```
+  - Ejemplo respuesta 201:
+    ```json
+    { "message": "Registro exitoso. Revisa tu correo para confirmar tu email.", "requiresEmailConfirmation": true }
+    ```
 
-1) Configura la cadena de conexión en `DoctorWare/appsettings.Development.json` → `ConnectionStrings:ConexionPredeterminada`.
-2) En Development, al iniciar se ejecutan los scripts SQL de `DoctorWare/Scripts` (idempotentes) y se verifica la conexión.
-3) Swagger disponible en `https://localhost:5001/swagger` o según el puerto configurado.
+- GET `/api/auth/confirm-email?uid&token`
+  - Marca el email como confirmado y redirige (o responde JSON si no hay redirección configurada).
+  - Parámetros requeridos: `uid` (int), `token` (string Base64Url)
+  - Respuesta JSON (si no hay redirección):
+    - 200 OK: `{ "message": "Email confirmado" }`
+    - 400/404/401: `{ "message": "..." }` (token inválido/expirado/usuario no encontrado)
 
-### Email de confirmación (dev)
+- POST `/api/auth/resend-confirmation`
+  - Body JSON: `{ email }`
+  - Reenvía el correo de confirmación (respuesta genérica, respeta cooldown configurado).
+  - Campos requeridos: `email` (formato email)
+  - Ejemplo request:
+    ```json
+    { "email": "ana@example.com" }
+    ```
+  - Ejemplo respuesta 200 (genérica):
+    ```json
+    { "message": "Si el email está registrado y no confirmado, enviaremos un enlace de confirmación." }
+    ```
 
-- Configura SMTP en `DoctorWare/appsettings.Development.json` sección `Email:Smtp`.
-- Configura `EmailConfirmation`:
-  - `TokenMinutes`: vigencia del token.
-  - `FrontendConfirmUrl`: opcional, URL del front para manejar la confirmación (se agregan `uid` y `token`).
-  - `BackendConfirmRedirectUrl`: adonde redirige el endpoint si se invoca directamente.
+- POST `/api/auth/login`
+  - Body JSON: `{ email, password }`
+  - Respuesta: `{ token, refreshToken, user, expiresIn }` (requiere email confirmado).
+  - Campos requeridos: `email`, `password`
+  - Ejemplo request:
+    ```json
+    { "email": "ana@example.com", "password": "Secreta1!" }
+    ```
+  - Ejemplo respuesta 200:
+    ```json
+    {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expiresIn": 3600,
+      "user": {
+        "id": "12",
+        "email": "ana@example.com",
+        "name": "Ana Pérez",
+        "role": "patient",
+        "status": "active",
+        "phone": null,
+        "avatar": null,
+        "createdAt": "2025-10-24T13:20:00Z",
+        "updatedAt": "2025-10-24T13:20:00Z"
+      }
+    }
+    ```
+  - Errores típicos:
+    - 401 `{ "message": "Credenciales inválidas." }`
+    - 401 `{ "message": "El email no está confirmado." }`
 
-## Puertos y Ejecución Local
+- POST `/api/auth/refresh`
+  - Body JSON: `{ refreshToken }`
+  - Respuesta: `{ token, refreshToken, user, expiresIn }`.
+  - Campos requeridos: `refreshToken`
+  - Ejemplo request:
+    ```json
+    { "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+    ```
+  - Ejemplo respuesta 200: igual que login (con nuevos tokens)
+  - Error 401: `{ "message": "Refresh token inválido o expirado." }`
 
-- Valores por defecto:
-  - HTTP: `http://localhost:5000`
-  - HTTPS: `https://localhost:5001`
-- Variable `BaseUrl` en `appsettings*.json` apunta a `http://localhost:5000`.
-- Forzar puertos (ejemplos):
-  - PowerShell: `setx ASPNETCORE_URLS "https://localhost:5001;http://localhost:5000"`
-  - Bash: `export ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"`
+- GET `/api/auth/me`
+  - Header: `Authorization: Bearer {token}`
+  - Respuesta: `user`.
+  - Ejemplo respuesta 200:
+    ```json
+    {
+      "id": "12",
+      "email": "ana@example.com",
+      "name": "Ana Pérez",
+      "role": "patient",
+      "status": "active",
+      "phone": null,
+      "avatar": null,
+      "createdAt": "2025-10-24T13:20:00Z",
+      "updatedAt": "2025-10-24T13:20:00Z"
+    }
+    ```
 
-## Autenticación y Swagger
+Utilidad
+- GET `/health` → estado de salud de la API/DB.
+- GET `/` → información básica de la API.
 
-- JWT configurado en `DoctorWare/appsettings*.json` sección `Jwt` (Secret, Issuer, Audience, tiempos).
-- Endpoints de autenticación (compatibles con el frontend):
-  - POST `/api/auth/register` → `{ token, refreshToken, user, expiresIn }`
-  - POST `/api/auth/login` → `{ token, refreshToken, user, expiresIn }`
-  - POST `/api/auth/refresh` → `{ token, refreshToken, user, expiresIn }`
-  - GET  `/api/auth/me` → Perfil del usuario autenticado (requiere `Authorization: Bearer {token}`)
-- Serialización JSON: camelCase global.
+## Configuración relevante (Development)
+- Archivo: `BackendDoctorWare/DoctorWare/appsettings.Development.json`
+- JWT: `Jwt:{ Secret, Issuer, Audience, AccessTokenMinutes, RefreshTokenMinutes }`
+- Email SMTP: `Email:Smtp:{ Host, Port, EnableSsl, User, Password, FromEmail, FromName }`
+- Confirmación de email: `EmailConfirmation:{ TokenMinutes (0 = sin vencimiento), FrontendConfirmUrl, BackendConfirmRedirectUrl, ResendCooldownSeconds }`
 
-### ¿Qué es `/api/auth/me`?
+Logs: `BackendDoctorWare/DoctorWare/logs`.
 
-Devuelve el perfil del usuario autenticado leyendo el JWT del header `Authorization: Bearer {token}`.
-- Método: GET `/api/auth/me`
-- Body: no requerido
-- Uso típico: recuperar sesión al iniciar la app, validar el token y obtener datos del usuario.
+## Manejo de errores en Angular (ejemplos)
 
-### Swagger UI
-
-- UI: `https://localhost:5001/swagger`
-- JSON: `https://localhost:5001/swagger/v1/swagger.json`
-
-## Pruebas Rápidas (REST Client)
-
-Archivo `DoctorWare/DoctorWare.http` con ejemplos de `login`, `refresh` y `me` (usar GET en `me`).
-
-## Uso desde Angular (ejemplos)
-
-- Base URL sugerida para integrar con este backend:
+- Interceptor para refrescar o manejar 401/403:
 
 ```ts
-// FrontEndDoctorWare/src/environments/environment.ts
-export const environment = {
-  production: false,
-  apiBaseUrl: 'http://localhost:3000/api',
-  jwtStorageKey: 'doctorware_token',
-  appName: 'DoctorWare',
-  logLevel: 'debug'
-};
+import { Injectable } from '@angular/core';
+import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+@Injectable()
+export class ErrorInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(req).pipe(
+      catchError((err: HttpErrorResponse) => {
+        const message = (err.error && err.error.message) || err.message;
+        if (err.status === 401 && message === 'El email no está confirmado.') {
+          // Mostrar UI para reenviar confirmación
+          // this.auth.resend(email).subscribe();
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+}
 ```
 
-- Servicio de autenticación (forma plana, sin ApiResponse):
+- Ejemplo de flujo de login en componente:
 
 ```ts
-// src/app/core/services/auth.service.ts (fragmento)
-interface AuthResult {
-  token: string;
-  refreshToken: string;
-  user: any; // coincide con el 'User' que espera el front
-  expiresIn: number;
-}
-
-login(email: string, password: string) {
-  return this.http.post<AuthResult>(`${this.base}/auth/login`, { email, password });
-}
-
-refresh(refreshToken: string) {
-  return this.http.post<AuthResult>(`${this.base}/auth/refresh`, { refreshToken });
-}
-
-me() {
-  return this.http.get<any>(`${this.base}/auth/me`);
-}
+this.auth.login(email, password).subscribe({
+  next: (res) => {
+    localStorage.setItem('doctorware_token', res.token);
+    // navegar a dashboard
+  },
+  error: (err) => {
+    const msg = err?.error?.message || 'Error de autenticación';
+    if (msg === 'El email no está confirmado.') {
+      // ofrecer botón: reenviar confirmación
+      // this.auth.resend(email).subscribe();
+    }
+  }
+});
 ```
-
-## CORS
-
-- Orígenes permitidos en Development (`DoctorWare/appsettings.Development.json`):
-  - `http://localhost:4200`, `http://localhost:4201`, `http://localhost:3000`
-
-## Buenas Prácticas Aplicadas
-
-- Middleware global de errores (respuestas homogéneas en producción y detalle en Development).
-- Health checks: `GET /health` con verificación de DB.
-- Ejecución de scripts SQL idempotente (control en tabla `schema_migrations`).
-- Nullability y analizadores habilitados.
-- Logging estructurado con Serilog.
-
-## Notas
-
-- Si al compilar aparece “archivo en uso”, detén instancias previas y ejecuta `dotnet clean` antes de compilar.

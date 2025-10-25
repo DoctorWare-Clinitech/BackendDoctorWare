@@ -13,6 +13,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace DoctorWare.Controllers
 {
@@ -31,6 +33,7 @@ namespace DoctorWare.Controllers
         private readonly ITokenService tokenService;
         private readonly IConfiguration configuration;
         private readonly DoctorWare.Data.Interfaces.IDbConnectionFactory connectionFactory;
+        private readonly ILogger<AuthController> logger;
 
         public AuthController(
             IUserService userService,
@@ -38,7 +41,8 @@ namespace DoctorWare.Controllers
             IPersonasRepository personasRepository,
             ITokenService tokenService,
             IConfiguration configuration,
-            DoctorWare.Data.Interfaces.IDbConnectionFactory connectionFactory)
+            DoctorWare.Data.Interfaces.IDbConnectionFactory connectionFactory,
+            ILogger<AuthController> logger)
         {
             this.userService = userService;
             this.usuariosRepository = usuariosRepository;
@@ -46,6 +50,7 @@ namespace DoctorWare.Controllers
             this.tokenService = tokenService;
             this.configuration = configuration;
             this.connectionFactory = connectionFactory;
+            this.logger = logger;
         }
 
         private async Task<string?> GetUserRoleAsync(int userId, CancellationToken cancellationToken)
@@ -96,6 +101,11 @@ namespace DoctorWare.Controllers
                 return Unauthorized(new { message = ErrorMessages.INVALID_CREDENTIALS });
             }
 
+            if (!user.EMAIL_CONFIRMADO)
+            {
+                return Unauthorized(new { message = ErrorMessages.EMAIL_NOT_CONFIRMED });
+            }
+
             var persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
             string fullName = persona is null ? string.Empty : $"{persona.NOMBRE} {persona.APELLIDO}".Trim();
             string role = await GetUserRoleAsync(user.ID_USUARIOS, cancellationToken) ?? "patient";
@@ -125,28 +135,11 @@ namespace DoctorWare.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
         {
             UserDto created = await userService.RegisterAsync(request, cancellationToken);
-
-            var user = await usuariosRepository.GetByIdAsync(created.IdUser, cancellationToken);
-            if (user is null)
-            {
-                return StatusCode(500, new { message = "User was created but could not be loaded" });
-            }
-
-            var persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
-            string fullName = persona is null ? string.Empty : $"{persona.NOMBRE} {persona.APELLIDO}".Trim();
-            string role = await GetUserRoleAsync(user.ID_USUARIOS, cancellationToken) ?? "patient";
-
-            (string accessToken, System.DateTime _) = tokenService.GenerateAccessToken(user, fullName, role);
-            (string refreshToken, System.DateTime _) = tokenService.GenerateRefreshToken(user, role);
-
-            var userFrontend = UserMapper.ToFrontendDto(user, persona, role);
-
+            // Seguridad: no emitir tokens en registro. Devolver mensaje y flag.
             return StatusCode(StatusCodes.Status201Created, new
             {
-                token = accessToken,
-                refreshToken = refreshToken,
-                user = userFrontend,
-                expiresIn = tokenService.GetAccessTokenTtlSeconds()
+                message = "Registro exitoso. Revisa tu correo para confirmar tu email.",
+                requiresEmailConfirmation = true
             });
         }
 
@@ -201,6 +194,11 @@ namespace DoctorWare.Controllers
                 if (user is null)
                 {
                     return Unauthorized(new { message = ErrorMessages.INVALID_REFRESH_TOKEN });
+                }
+
+                if (!user.EMAIL_CONFIRMADO)
+                {
+                    return Unauthorized(new { message = ErrorMessages.EMAIL_NOT_CONFIRMED });
                 }
 
                 Models.PERSONAS? persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
@@ -297,14 +295,18 @@ namespace DoctorWare.Controllers
                 return BadRequest(new { message = ErrorMessages.INVALID_REFRESH_TOKEN });
             }
 
-            if (!string.Equals(user.TOKEN_RECUPERACION, token, StringComparison.Ordinal))
+            // Comparar el hash del token (se guarda como SHA-256 hex en DB)
+            var providedHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
+            if (!string.Equals(user.TOKEN_RECUPERACION, providedHash, StringComparison.Ordinal))
             {
                 if (!string.IsNullOrWhiteSpace(redirectBase))
                     return Redirect($"{redirectBase}{(redirectBase.Contains('?') ? '&' : '?')}status=error&reason=invalid_token");
                 return BadRequest(new { message = ErrorMessages.INVALID_REFRESH_TOKEN });
             }
 
-            if (DateTime.UtcNow > user.TOKEN_EXPIRACION.Value)
+            // Si TokenMinutes <= 0, se interpreta como sin vencimiento
+            int tokenMinutes = int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out var tm) ? tm : 60;
+            if (tokenMinutes > 0 && DateTime.UtcNow > user.TOKEN_EXPIRACION.Value)
             {
                 if (!string.IsNullOrWhiteSpace(redirectBase))
                     return Redirect($"{redirectBase}{(redirectBase.Contains('?') ? '&' : '?')}status=error&reason=expired_token");
@@ -335,6 +337,83 @@ where ""ID_USUARIOS""=@id";
                 return Redirect($"{redirectBase}{(redirectBase.Contains('?') ? '&' : '?')}status=success");
 
             return Ok(new { message = "Email confirmado" });
+        }
+
+        /// <summary>
+        /// Reenvía el email de confirmación si el usuario no está confirmado.
+        /// La respuesta es siempre genérica para no revelar si el email existe.
+        /// </summary>
+        [HttpPost("resend-confirmation")]
+        [AllowAnonymous]
+        [Consumes("application/json")]
+        public async Task<IActionResult> ResendConfirmation([FromBody] DoctorWare.DTOs.Requests.ResendConfirmationRequest request, CancellationToken cancellationToken)
+        {
+            string email = request.Email.Trim().ToLowerInvariant();
+            var user = await usuariosRepository.GetByEmailAsync(email, cancellationToken);
+
+            // Respuesta genérica por seguridad
+            var genericOk = Ok(new { message = "Si el email está registrado y no confirmado, enviaremos un enlace de confirmación." });
+
+            if (user is null || user.EMAIL_CONFIRMADO)
+            {
+                return genericOk;
+            }
+
+            try
+            {
+                int tokenMinutes = int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out var m) ? m : 60;
+                int cooldownSeconds = int.TryParse(configuration["EmailConfirmation:ResendCooldownSeconds"], out var cs) ? cs : 60;
+
+                DateTime? expires = user.TOKEN_EXPIRACION;
+                DateTime lastIssuedAt = DateTime.MinValue;
+                if (expires.HasValue)
+                {
+                    lastIssuedAt = tokenMinutes > 0 ? expires.Value.AddMinutes(-tokenMinutes) : expires.Value; // cuando no expira, usamos expires como marca de emisión
+                }
+                if ((DateTime.UtcNow - lastIssuedAt).TotalSeconds < cooldownSeconds)
+                {
+                    return genericOk;
+                }
+
+                // Generar nuevo token + hash y guardar
+                var tokenBytes = RandomNumberGenerator.GetBytes(32);
+                var emailToken = WebEncoders.Base64UrlEncode(tokenBytes);
+                var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(emailToken))).ToLowerInvariant();
+                DateTime newExpires = tokenMinutes > 0 ? DateTime.UtcNow.AddMinutes(tokenMinutes) : DateTime.UtcNow; // sin vencimiento, guardamos marca de emisión
+
+                using var con = connectionFactory.CreateConnection();
+                await con.ExecuteAsync("update public.\"USUARIOS\" set \"TOKEN_RECUPERACION\"=@token, \"TOKEN_EXPIRACION\"=@exp, \"ULTIMA_ACTUALIZACION\"=@now where \"ID_USUARIOS\"=@id",
+                    new { token = tokenHash, exp = newExpires, now = DateTime.UtcNow, id = user.ID_USUARIOS });
+
+                // Construir URL
+                string? frontUrl = configuration["EmailConfirmation:FrontendConfirmUrl"];
+                string baseUrl = configuration["BaseUrl"] ?? "http://localhost:5000";
+                string backendUrl = $"{baseUrl.TrimEnd('/')}/api/auth/confirm-email?uid={user.ID_USUARIOS}&token={emailToken}";
+                string confirmationUrl = !string.IsNullOrWhiteSpace(frontUrl)
+                    ? $"{frontUrl}{(frontUrl!.Contains('?') ? '&' : '?')}uid={user.ID_USUARIOS}&token={emailToken}"
+                    : backendUrl;
+
+                string subject = "Confirma tu correo - DoctorWare";
+                string html = $@"<p>Hola,</p>
+                                 <p>Te enviamos nuevamente el enlace para confirmar tu correo en DoctorWare:</p>
+                                 <p><a href=""{confirmationUrl}"">Confirmar correo</a></p>
+                                 <p>Si no solicitaste esto, ignora este mensaje.</p>";
+
+                try
+                {
+                    await HttpContext.RequestServices.GetRequiredService<DoctorWare.Services.Interfaces.IEmailSender>().SendEmailAsync(email, subject, html, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error reenviando el email de confirmación a {Email}", email);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en resend-confirmation para {Email}", email);
+            }
+
+            return genericOk;
         }
     }
 }

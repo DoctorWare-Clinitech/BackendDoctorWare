@@ -112,10 +112,14 @@ namespace DoctorWare.Services.Implementation
                 var tokenBytes = RandomNumberGenerator.GetBytes(32);
                 var emailToken = WebEncoders.Base64UrlEncode(tokenBytes);
                 var minutes = int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out var m) ? m : 60;
-                DateTime expiresAt = DateTime.UtcNow.AddMinutes(minutes);
+                DateTime nowUtc = DateTime.UtcNow;
+                DateTime expiresAt = minutes > 0 ? nowUtc.AddMinutes(minutes) : nowUtc; // si minutes<=0, sin vencimiento (usamos now como marca de emisión)
+
+                // Hashear el token antes de guardar en DB (no almacenar en claro)
+                var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(emailToken))).ToLowerInvariant();
 
                 string sqlUpdateToken = "update public.\"USUARIOS\" set \"TOKEN_RECUPERACION\"=@token, \"TOKEN_EXPIRACION\"=@exp where \"ID_USUARIOS\"=@id";
-                await con.ExecuteAsync(sqlUpdateToken, new { token = emailToken, exp = expiresAt, id = usuarioCreado.ID_USUARIOS }, tx);
+                await con.ExecuteAsync(sqlUpdateToken, new { token = tokenHash, exp = expiresAt, id = usuarioCreado.ID_USUARIOS }, tx);
 
                 tx.Commit();
 

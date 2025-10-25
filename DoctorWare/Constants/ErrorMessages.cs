@@ -13,5 +13,6 @@ namespace DoctorWare.Constants
         public const string EMAIL_ALREADY_REGISTERED = "El email ya está registrado.";
         public const string INVALID_CREDENTIALS = "Credenciales inválidas.";
         public const string INVALID_REFRESH_TOKEN = "Refresh token inválido o expirado.";
+        public const string EMAIL_NOT_CONFIRMED = "El email no está confirmado.";
     }
 }
