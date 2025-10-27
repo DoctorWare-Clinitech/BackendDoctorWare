@@ -7,6 +7,8 @@ using DoctorWare.Health;
 using DoctorWare.Middleware;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DoctorWare.DTOs.Response;
 using Serilog;
 using System.Reflection;
 
@@ -41,6 +43,7 @@ constructor.Services.AddScoped<DoctorWare.Repositories.Interfaces.IPersonasRepos
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IUserService, DoctorWare.Services.Implementation.UsersService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ITokenService, DoctorWare.Services.Implementation.TokenService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailSender, DoctorWare.Services.Implementation.SmtpEmailSender>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailConfirmationService, DoctorWare.Services.Implementation.EmailConfirmationService>();
 
 // ========================================
 // CORS (Lee los orígenes permitidos según ambiente)
@@ -52,7 +55,7 @@ constructor.Services.AddCors(opciones =>
 {
     opciones.AddPolicy("PermitirAngular", politica =>
     {
-        politica.WithOrigins(origenesPermitidos)
+        Microsoft.AspNetCore.Cors.Infrastructure.CorsPolicyBuilder corsPolicyBuilder = politica.WithOrigins(origenesPermitidos)
                .AllowAnyHeader()
                .AllowAnyMethod()
                .AllowCredentials();
@@ -123,8 +126,8 @@ constructor.Services.AddHealthChecks()
 // ========================================
 constructor.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GetAuthenticationScheme();
 })
 .AddJwtBearer(options =>
 {
@@ -147,6 +150,30 @@ constructor.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
         NameClaimType = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            // Evitar respuesta por defecto de JwtBearer
+            context.HandleResponse();
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                ApiResponse<object> payload = new ApiResponse<object>(false, null, "No autorizado", "unauthorized");
+                return context.Response.WriteAsJsonAsync(payload);
+            }
+            return Task.CompletedTask;
+        },
+        OnForbidden = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            ApiResponse<object> payload = new ApiResponse<object>(false, null, "Acceso denegado", "forbidden");
+            return context.Response.WriteAsJsonAsync(payload);
+        }
     };
 });
 constructor.Services.AddAuthorization();
@@ -218,6 +245,34 @@ app.UseHttpsRedirection();
 app.UseCors("PermitirAngular");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Respuestas JSON homogéneas para códigos de estado sin excepción (404, 405, etc.)
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    if (response.HasStarted) return;
+    response.ContentType = "application/json";
+
+    string code = response.StatusCode switch
+    {
+        StatusCodes.Status401Unauthorized => "unauthorized",
+        StatusCodes.Status403Forbidden => "forbidden",
+        StatusCodes.Status404NotFound => "not_found",
+        StatusCodes.Status405MethodNotAllowed => "method_not_allowed",
+        _ => "error"
+    };
+    string message = response.StatusCode switch
+    {
+        StatusCodes.Status401Unauthorized => "No autorizado",
+        StatusCodes.Status403Forbidden => "Acceso denegado",
+        StatusCodes.Status404NotFound => "Recurso no encontrado",
+        StatusCodes.Status405MethodNotAllowed => "Método no permitido",
+        _ => "Ha ocurrido un error"
+    };
+
+    var payload = new ApiResponse<object>(false, null, message, code);
+    await response.WriteAsJsonAsync(payload);
+});
 try
 {
     app.MapControllers();
@@ -268,4 +323,9 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static string GetAuthenticationScheme()
+{
+    return Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
 }

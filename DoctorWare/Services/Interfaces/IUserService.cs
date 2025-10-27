@@ -7,6 +7,7 @@ namespace DoctorWare.Services.Interfaces
     public interface IUserService : IService<USUARIOS, int>
     {
         Task<UserDto> RegisterAsync(RegisterUserRequest request, CancellationToken cancellationToken = default);
+
+        Task<string> ResolvePrimaryRoleAsync(int userId, CancellationToken cancellationToken = default);
     }
 }
-

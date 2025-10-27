@@ -52,5 +52,19 @@ namespace DoctorWare.Repositories.Implementation
         {
             return await con.QuerySingleAsync<USUARIOS>(InsertSql, ToDb(entity), tx);
         }
+
+        public async Task<string?> GetLatestRoleCodeAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            using IDbConnection con = CreateConnection();
+            const string sql = @"select r.""NOMBRE"" as Nombre
+                from public.""USUARIOS_ROLES"" ur
+                join public.""ROLES"" r on r.""ID_ROLES"" = ur.""ID_ROLES""
+                where ur.""ID_USUARIOS"" = @userId
+                order by ur.""FECHA_CREACION"" desc
+                limit 1";
+
+            var result = await con.QueryFirstOrDefaultAsync<string?>(new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
+            return string.IsNullOrWhiteSpace(result) ? null : result.Trim();
+        }
     }
 }

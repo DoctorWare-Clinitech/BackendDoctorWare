@@ -6,31 +6,30 @@ using DoctorWare.DTOs.Response;
 using DoctorWare.Exceptions;
 using DoctorWare.Models;
 using DoctorWare.Repositories.Interfaces;
+using DoctorWare.Services.Interfaces;
 using DoctorWare.Utils;
 using System.Data;
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace DoctorWare.Services.Implementation
 {
-    public class UsersService : BaseService<USUARIOS, int>, DoctorWare.Services.Interfaces.IUserService
+    public class UsersService : BaseService<USUARIOS, int>, IUserService
     {
         private readonly IUsuariosRepository usuariosRepository;
         private readonly IPersonasRepository personasRepository;
         private readonly IDbConnectionFactory factory;
-        private readonly DoctorWare.Services.Interfaces.IEmailSender emailSender;
-        private readonly IConfiguration configuration;
-        private readonly ILogger<UsersService> logger;
+        private readonly IEmailConfirmationService emailConfirmationService;
 
-        public UsersService(IUsuariosRepository usuariosRepository, IPersonasRepository personasRepository, IDbConnectionFactory factory, DoctorWare.Services.Interfaces.IEmailSender emailSender, IConfiguration configuration, ILogger<UsersService> logger)
+        public UsersService(
+            IUsuariosRepository usuariosRepository,
+            IPersonasRepository personasRepository,
+            IDbConnectionFactory factory,
+            IEmailConfirmationService emailConfirmationService)
             : base(usuariosRepository)
         {
             this.usuariosRepository = usuariosRepository;
             this.personasRepository = personasRepository;
             this.factory = factory;
-            this.emailSender = emailSender;
-            this.configuration = configuration;
-            this.logger = logger;
+            this.emailConfirmationService = emailConfirmationService;
         }
 
         protected override async Task ValidateAsync(USUARIOS entity)
@@ -108,43 +107,9 @@ namespace DoctorWare.Services.Implementation
 
                 var usuarioCreado = await usuariosRepository.InsertWithConnectionAsync(usuario, con, tx, cancellationToken);
 
-                // Generar token de confirmación de email y guardar dentro de la transacción
-                var tokenBytes = RandomNumberGenerator.GetBytes(32);
-                var emailToken = WebEncoders.Base64UrlEncode(tokenBytes);
-                var minutes = int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out var m) ? m : 60;
-                DateTime nowUtc = DateTime.UtcNow;
-                DateTime expiresAt = minutes > 0 ? nowUtc.AddMinutes(minutes) : nowUtc; // si minutes<=0, sin vencimiento (usamos now como marca de emisión)
-
-                // Hashear el token antes de guardar en DB (no almacenar en claro)
-                var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(emailToken))).ToLowerInvariant();
-
-                string sqlUpdateToken = "update public.\"USUARIOS\" set \"TOKEN_RECUPERACION\"=@token, \"TOKEN_EXPIRACION\"=@exp where \"ID_USUARIOS\"=@id";
-                await con.ExecuteAsync(sqlUpdateToken, new { token = tokenHash, exp = expiresAt, id = usuarioCreado.ID_USUARIOS }, tx);
-
                 tx.Commit();
 
-                // Construir URL de confirmación (preferir front si está configurado)
-                string? frontUrl = configuration["EmailConfirmation:FrontendConfirmUrl"];
-                string baseUrl = configuration["BaseUrl"] ?? "http://localhost:5000";
-                string backendUrl = $"{baseUrl.TrimEnd('/')}/api/auth/confirm-email?uid={usuarioCreado.ID_USUARIOS}&token={emailToken}";
-                string confirmationUrl = !string.IsNullOrWhiteSpace(frontUrl)
-                    ? $"{frontUrl}{(frontUrl!.Contains('?') ? '&' : '?')}uid={usuarioCreado.ID_USUARIOS}&token={emailToken}"
-                    : backendUrl;
-
-                // Intentar enviar email (no fallar el registro si falla el envío)
-                try
-                {
-                    string subject = "Confirma tu correo - DoctorWare";
-                    string html = $@"<p>Hola {personaCreada.NOMBRE},</p>
-                                     <p>Gracias por registrarte en DoctorWare. Por favor confirma tu correo haciendo click en el siguiente enlace:</p>
-                                     <p><a href=""{confirmationUrl}"">Confirmar correo</a></p>
-                                     <p>Si no fuiste tú, ignora este mensaje.</p>";
-                    await emailSender.SendEmailAsync(email, subject, html, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "No se pudo enviar el email de confirmación a {Email}", email);
-                }
+                await emailConfirmationService.SendConfirmationEmailAsync(usuarioCreado.ID_USUARIOS, cancellationToken, bypassCooldown: true);
 
                 return new UserDto
                 {
@@ -163,7 +128,23 @@ namespace DoctorWare.Services.Implementation
                 throw;
             }
         }
+
+        public async Task<string> ResolvePrimaryRoleAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            var rawRole = await usuariosRepository.GetLatestRoleCodeAsync(userId, cancellationToken);
+            if (string.IsNullOrWhiteSpace(rawRole))
+            {
+                return "patient";
+            }
+
+            return rawRole.Trim().ToLowerInvariant() switch
+            {
+                "profesional" or "professional" => "professional",
+                "secretario" or "secretaria" or "secretary" => "secretary",
+                "paciente" or "patient" => "patient",
+                "admin" or "administrador" or "administradora" => "admin",
+                _ => "patient"
+            };
+        }
     }
 }
-
-
