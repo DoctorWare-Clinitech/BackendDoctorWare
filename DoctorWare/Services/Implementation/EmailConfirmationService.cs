@@ -6,12 +6,8 @@ using DoctorWare.Repositories.Interfaces;
 using DoctorWare.Services.Interfaces;
 using DoctorWare.Services.Templates;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
-using System;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace DoctorWare.Services.Implementation
 {
@@ -237,7 +233,7 @@ where ""ID_USUARIOS""=@id";
 
         private int GetTokenMinutes()
         {
-            return int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out var minutes) ? minutes : 60;
+            return int.TryParse(configuration["EmailConfirmation:TokenMinutes"], out int minutes) ? minutes : 60;
         }
 
         private int GetCooldownSeconds()
