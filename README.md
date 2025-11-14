@@ -38,6 +38,51 @@ Autenticación
     { "message": "Registro exitoso. Revisa tu correo para confirmar tu email.", "requiresEmailConfirmation": true }
     ```
 
+- POST `/api/auth/register/patient`
+  - Body JSON: igual que `register` + opcionales de paciente: `obraSocial?`, `numeroAfiliado?`, `contactoEmergenciaNombre?`, `contactoEmergenciaTelefono?`, `contactoEmergenciaRelacion?`
+  - Efecto: crea PERSONAS, USUARIOS, PACIENTES y vincula rol PACIENTE en USUARIOS_ROLES.
+  - Respuesta: `201 { message, requiresEmailConfirmation: true }`
+  - Ejemplo request:
+    ```json
+    {
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "email": "juan.perez@example.com",
+      "password": "Password123",
+      "telefono": "1234567890",
+      "nroDocumento": 12345678,
+      "tipoDocumentoCodigo": "DNI",
+      "genero": "Masculino",
+      "obraSocial": "OSDE",
+      "numeroAfiliado": "123456789"
+    }
+    ```
+
+- POST `/api/auth/register/professional`
+  - Body JSON: igual que `register` + requeridos del profesional: `matriculaNacional`, `matriculaProvincial`, `especialidadId`, `titulo`, `universidad`, `cuit_cuil` (11 dígitos)
+  - Validaciones: email único, matrículas únicas, CUIT/CUIL válido y único, `especialidadId` existente.
+  - Efecto: crea PERSONAS, USUARIOS, PROFESIONALES, relación en PROFESIONAL_ESPECIALIDADES y vincula rol PROFESIONAL en USUARIOS_ROLES.
+  - Respuesta: `201 { message, requiresEmailConfirmation: true }`
+  - Ejemplo request:
+    ```json
+    {
+      "nombre": "María",
+      "apellido": "González",
+      "email": "maria.gonzalez@example.com",
+      "password": "Password123",
+      "telefono": "1234567890",
+      "nroDocumento": 87654321,
+      "tipoDocumentoCodigo": "DNI",
+      "genero": "Femenino",
+      "matriculaNacional": "MN12345",
+      "matriculaProvincial": "MP67890",
+      "especialidadId": 1,
+      "titulo": "Médico Cirujano",
+      "universidad": "Universidad de Buenos Aires",
+      "cuit_cuil": "20876543210"
+    }
+    ```
+
 - GET `/api/auth/confirm-email?uid&token`
   - Marca el email como confirmado y redirige (o responde JSON si no hay redirección configurada).
   - Parámetros requeridos: `uid` (int), `token` (string Base64Url)
@@ -89,6 +134,16 @@ Autenticación
     - 401 `{ "message": "Credenciales inválidas." }`
     - 401 `{ "message": "El email no está confirmado." }`
 
+- GET `/api/auth/specialties`
+  - Devuelve lista de especialidades médicas (id + nombre) para registro de profesionales.
+  - Ejemplo respuesta:
+    ```json
+    [
+      { "id": 1, "nombre": "Clínica Médica" },
+      { "id": 2, "nombre": "Cardiología" }
+    ]
+    ```
+
 - POST `/api/auth/refresh`
   - Body JSON: `{ refreshToken }`
   - Respuesta: `{ token, refreshToken, user, expiresIn }`.
@@ -129,6 +184,98 @@ Utilidad
 - Confirmación de email: `EmailConfirmation:{ TokenMinutes (0 = sin vencimiento), FrontendConfirmUrl, BackendConfirmRedirectUrl, ResendCooldownSeconds }`
 
 Logs: `BackendDoctorWare/DoctorWare/logs`.
+
+Notas sobre roles
+- Registro de Paciente: asigna rol `PACIENTE` en `USUARIOS_ROLES`.
+- Registro de Profesional: asigna rol `PROFESIONAL` y vincula `especialidadId`.
+- Claim `role` del JWT retorna nombres normalizados para frontend: `patient`, `professional`, `secretary`, `admin`.
+
+## Guía Frontend: Uso de Endpoints de Auth
+
+- Base URL en dev: `http://localhost:3000`
+- Headers comunes:
+  - `Content-Type: application/json`
+  - `Accept: application/json`
+
+Flujo recomendado
+1) Registro público (paciente o profesional)
+   - Paciente: `POST /api/auth/register/patient`
+   - Profesional: `POST /api/auth/register/professional`
+   - Respuesta 201: `{ message, requiresEmailConfirmation: true }`
+2) Confirmación de email
+   - Link llega por correo. Endpoint backend: `GET /api/auth/confirm-email?uid={id}&token={token}`
+   - Si hay `EmailConfirmation:FrontendConfirmUrl` configurado, la app redirige a ese URL con `uid` y `token` como query.
+3) Login
+   - `POST /api/auth/login` con `{ email, password }`
+   - Respuesta 200: `{ token, refreshToken, user, expiresIn }`
+   - Guardar `token` (Bearer) y `refreshToken` en storage seguro.
+4) Perfil (Me)
+   - `GET /api/auth/me` con `Authorization: Bearer {token}`
+   - Respuesta 200: `UserFrontendDto` (`id`, `email`, `name`, `role`, `status`, `phone`, `avatar`, `createdAt`, `updatedAt`)
+5) Refresh token
+   - `POST /api/auth/refresh` con `{ refreshToken }`
+   - Respuesta 200: nuevos `{ token, refreshToken, user, expiresIn }`
+
+Registro de Paciente (campos)
+- Requeridos (heredados de `register`):
+  - `nombre`: string, mínimo 2
+  - `apellido`: string, mínimo 2
+  - `email`: string (email válido)
+  - `password`: string (mínimo 6)
+  - `nroDocumento`: number
+  - `tipoDocumentoCodigo`: string (ej. "DNI")
+  - `genero`: string (ej. "Femenino", "Masculino", "Prefiere no decirlo")
+- Opcionales específicos:
+  - `obraSocial`: string
+  - `numeroAfiliado`: string
+  - `contactoEmergenciaNombre`: string
+  - `contactoEmergenciaTelefono`: string
+  - `contactoEmergenciaRelacion`: string
+
+Registro de Profesional (campos)
+- Requeridos (heredados de `register`) + específicos:
+  - `matriculaNacional`: string (min 5)
+  - `matriculaProvincial`: string (min 5)
+  - `especialidadId`: number (ID en tabla ESPECIALIDADES)
+  - `titulo`: string
+  - `universidad`: string
+  - `cuit_cuil`: string de 11 dígitos (valida DV, sin guiones)
+- Validaciones backend:
+  - Email único
+  - Matrícula nacional única
+  - Matrícula provincial única
+  - CUIT/CUIL válido y único
+  - `especialidadId` existente
+
+Especialidades
+- `GET /api/auth/specialties` → lista de `{ id, nombre }` ordenada por nombre.
+- Usar para poblar select en formulario de registro de profesional.
+
+Manejo de errores
+- Formato estándar (middleware):
+  ```json
+  {
+    "success": false,
+    "data": null,
+    "message": "El email ya está registrado.",
+    "errorCode": "bad_request"
+  }
+  ```
+- Códigos y mensajes comunes:
+  - 400 `bad_request`: "El email ya está registrado.", "La matrícula nacional ya está registrada.", "La matrícula provincial ya está registrada.", "El CUIT/CUIL ya está registrado.", "CUIT/CUIL inválido.", "La especialidad indicada no existe."
+  - 401 `unauthorized`: "Credenciales inválidas.", "El email no está confirmado.", "Refresh token inválido o expirado."
+  - 404 `not_found`: recurso inexistente
+  - 500 `server_error` o `db_connection_error`
+
+Tokens y roles
+- Header: `Authorization: Bearer {token}` en endpoints protegidos.
+- `expiresIn`: segundos de vida del access token.
+- El claim `role` estará normalizado para el front: `patient`, `professional`, `secretary`, `admin`.
+- Recomendación: interceptor HTTP que refresque tokens al recibir 401 por expiración (ver ejemplo base en este README).
+
+Notas de tiempo y formato
+- Timestamps en UTC (`createdAt`, `updatedAt`).
+- Strings JSON en `camelCase` por configuración del serializer.
 
 ## Manejo de errores en Angular (ejemplos)
 

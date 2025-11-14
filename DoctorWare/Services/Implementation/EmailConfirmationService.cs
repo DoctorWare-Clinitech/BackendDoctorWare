@@ -6,6 +6,7 @@ using DoctorWare.Repositories.Interfaces;
 using DoctorWare.Services.Interfaces;
 using DoctorWare.Services.Templates;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -38,7 +39,7 @@ namespace DoctorWare.Services.Implementation
 
         public async Task SendConfirmationEmailAsync(int userId, CancellationToken cancellationToken = default, bool bypassCooldown = false)
         {
-            var user = await usuariosRepository.GetByIdAsync(userId, cancellationToken);
+            USUARIOS? user = await usuariosRepository.GetByIdAsync(userId, cancellationToken);
             if (user is null)
             {
                 logger.LogWarning("No se encontró el usuario {UserId} al intentar enviar confirmación de email", userId);
@@ -50,8 +51,8 @@ namespace DoctorWare.Services.Implementation
                 return;
             }
 
-            var persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
-            var status = await IssueTokenAndSendAsync(user, persona, bypassCooldown, cancellationToken);
+            PERSONAS? persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
+            ResendConfirmationStatus status = await IssueTokenAndSendAsync(user, persona, bypassCooldown, cancellationToken);
             if (status == ResendConfirmationStatus.CooldownActive)
             {
                 logger.LogDebug("Cooldown activo al intentar enviar confirmación para el usuario {UserId}", userId);
@@ -60,7 +61,7 @@ namespace DoctorWare.Services.Implementation
 
         public async Task<EmailConfirmationResult> ConfirmAsync(int userId, string token, CancellationToken cancellationToken = default)
         {
-            var user = await usuariosRepository.GetByIdAsync(userId, cancellationToken);
+            USUARIOS? user = await usuariosRepository.GetByIdAsync(userId, cancellationToken);
             if (user is null)
             {
                 return EmailConfirmationResult.NotFound();
@@ -76,21 +77,21 @@ namespace DoctorWare.Services.Implementation
                 return EmailConfirmationResult.InvalidToken();
             }
 
-            var providedHash = HashToken(token);
+            string providedHash = HashToken(token);
             if (!string.Equals(user.TOKEN_RECUPERACION, providedHash, StringComparison.Ordinal))
             {
                 return EmailConfirmationResult.InvalidToken();
             }
 
-            var tokenMinutes = GetTokenMinutes();
+            int tokenMinutes = GetTokenMinutes();
             if (tokenMinutes > 0 && DateTime.UtcNow > user.TOKEN_EXPIRACION.Value)
             {
                 return EmailConfirmationResult.Expired();
             }
 
-            using var con = connectionFactory.CreateConnection();
+            using IDbConnection con = connectionFactory.CreateConnection();
             con.Open();
-            using var tx = con.BeginTransaction();
+            using IDbTransaction tx = con.BeginTransaction();
             try
             {
                 const string updateSql = @"update public.""USUARIOS"" 
@@ -113,8 +114,8 @@ where ""ID_USUARIOS""=@id";
 
         public async Task<ResendConfirmationResult> ResendAsync(string email, CancellationToken cancellationToken = default)
         {
-            var normalizedEmail = email.Trim().ToLowerInvariant();
-            var user = await usuariosRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
+            string normalizedEmail = email.Trim().ToLowerInvariant();
+            USUARIOS? user = await usuariosRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
             if (user is null)
             {
                 return ResendConfirmationResult.NotFound();
@@ -125,8 +126,8 @@ where ""ID_USUARIOS""=@id";
                 return ResendConfirmationResult.AlreadyConfirmed();
             }
 
-            var persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
-            var status = await IssueTokenAndSendAsync(user, persona, bypassCooldown: false, cancellationToken);
+            PERSONAS? persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
+            ResendConfirmationStatus status = await IssueTokenAndSendAsync(user, persona, bypassCooldown: false, cancellationToken);
             return status switch
             {
                 ResendConfirmationStatus.Sent => ResendConfirmationResult.Sent(),
@@ -143,19 +144,19 @@ where ""ID_USUARIOS""=@id";
                 return ResendConfirmationStatus.AlreadyConfirmed;
             }
 
-            var tokenMinutes = GetTokenMinutes();
-            var cooldownSeconds = GetCooldownSeconds();
+            int tokenMinutes = GetTokenMinutes();
+            int cooldownSeconds = GetCooldownSeconds();
 
             if (!bypassCooldown && IsCooldownActive(user, tokenMinutes, cooldownSeconds))
             {
                 return ResendConfirmationStatus.CooldownActive;
             }
 
-            var now = DateTime.UtcNow;
-            var (tokenValue, tokenHash) = GenerateTokenPair();
-            var expiresAt = tokenMinutes > 0 ? now.AddMinutes(tokenMinutes) : now;
+            DateTime now = DateTime.UtcNow;
+            (string tokenValue, string tokenHash) = GenerateTokenPair();
+            DateTime expiresAt = tokenMinutes > 0 ? now.AddMinutes(tokenMinutes) : now;
 
-            using (var con = connectionFactory.CreateConnection())
+            using (IDbConnection con = connectionFactory.CreateConnection())
             {
                 await con.ExecuteAsync(
                     "update public.\"USUARIOS\" set \"TOKEN_RECUPERACION\"=@token, \"TOKEN_EXPIRACION\"=@exp, \"ULTIMA_ACTUALIZACION\"=@now where \"ID_USUARIOS\"=@id",
@@ -166,15 +167,35 @@ where ""ID_USUARIOS""=@id";
             user.TOKEN_EXPIRACION = expiresAt;
             user.ULTIMA_ACTUALIZACION = now;
 
-            var confirmationUrl = BuildConfirmationUrl(user.ID_USUARIOS, tokenValue);
-            var greetingName = persona is null
+            string confirmationUrl = BuildConfirmationUrl(user.ID_USUARIOS, tokenValue);
+            string greetingName = persona is null
                 ? string.Empty
                 : $"{persona.NOMBRE} {persona.APELLIDO}".Trim();
-            var htmlBody = EmailTemplates.BuildConfirmationEmail(greetingName, confirmationUrl);
+
+            // Determinar rol primario para personalizar el email
+            string? roleCode;
+            try
+            {
+                roleCode = await usuariosRepository.GetLatestRoleCodeAsync(user.ID_USUARIOS, cancellationToken);
+            }
+            catch
+            {
+                roleCode = null;
+            }
+            string roleNorm = (roleCode ?? "paciente").Trim().ToLowerInvariant();
+            bool isProfessional = roleNorm is "profesional" or "professional";
+
+            string htmlBody = isProfessional
+                ? EmailTemplates.BuildProfessionalConfirmationEmail(greetingName, confirmationUrl)
+                : EmailTemplates.BuildPatientConfirmationEmail(greetingName, confirmationUrl);
+
+            string subject = isProfessional
+                ? "Bienvenido a DoctorWare - Confirma tu cuenta profesional"
+                : "Bienvenido a DoctorWare - Confirma tu cuenta";
 
             try
             {
-                await emailSender.SendEmailAsync(user.EMAIL, "Confirma tu correo - DoctorWare", htmlBody, cancellationToken);
+                await emailSender.SendEmailAsync(user.EMAIL, subject, htmlBody, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -196,7 +217,7 @@ where ""ID_USUARIOS""=@id";
                 return false;
             }
 
-            var issuedAt = tokenMinutes > 0
+            DateTime issuedAt = tokenMinutes > 0
                 ? user.TOKEN_EXPIRACION.Value.AddMinutes(-tokenMinutes)
                 : user.TOKEN_EXPIRACION.Value;
 
@@ -205,9 +226,9 @@ where ""ID_USUARIOS""=@id";
 
         private (string tokenValue, string tokenHash) GenerateTokenPair()
         {
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            var tokenValue = WebEncoders.Base64UrlEncode(tokenBytes);
-            var tokenHash = HashToken(tokenValue);
+            byte[] tokenBytes = RandomNumberGenerator.GetBytes(32);
+            string tokenValue = WebEncoders.Base64UrlEncode(tokenBytes);
+            string tokenHash = HashToken(tokenValue);
             return (tokenValue, tokenHash);
         }
 
@@ -242,4 +263,3 @@ where ""ID_USUARIOS""=@id";
         }
     }
 }
-

@@ -31,6 +31,7 @@ namespace DoctorWare.Controllers
         private readonly IConfiguration configuration;
         private readonly IEmailConfirmationService emailConfirmationService;
         private readonly ILogger<AuthController> logger;
+        private readonly ISpecialtyService specialtyService;
 
         public AuthController(
             IUserService userService,
@@ -39,7 +40,8 @@ namespace DoctorWare.Controllers
             ITokenService tokenService,
             IConfiguration configuration,
             IEmailConfirmationService emailConfirmationService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            ISpecialtyService specialtyService)
         {
             this.userService = userService;
             this.usuariosRepository = usuariosRepository;
@@ -48,6 +50,7 @@ namespace DoctorWare.Controllers
             this.configuration = configuration;
             this.emailConfirmationService = emailConfirmationService;
             this.logger = logger;
+            this.specialtyService = specialtyService;
         }
 
         /// <summary>
@@ -63,8 +66,8 @@ namespace DoctorWare.Controllers
         [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
         {
-            var email = request.Email.Trim().ToLowerInvariant();
-            var user = await usuariosRepository.GetByEmailAsync(email, cancellationToken);
+            string email = request.Email.Trim().ToLowerInvariant();
+            Models.USUARIOS? user = await usuariosRepository.GetByEmailAsync(email, cancellationToken);
             if (user is null)
             {
                 throw new UnauthorizedAccessException(ErrorMessages.INVALID_CREDENTIALS);
@@ -80,14 +83,14 @@ namespace DoctorWare.Controllers
                 throw new UnauthorizedAccessException(ErrorMessages.EMAIL_NOT_CONFIRMED);
             }
 
-            var persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
+            Models.PERSONAS? persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
             string fullName = persona is null ? string.Empty : $"{persona.NOMBRE} {persona.APELLIDO}".Trim();
             string role = await userService.ResolvePrimaryRoleAsync(user.ID_USUARIOS, cancellationToken);
 
             (string accessToken, System.DateTime _) = tokenService.GenerateAccessToken(user, fullName, role);
             (string refreshToken, System.DateTime _) = tokenService.GenerateRefreshToken(user, role);
 
-            var userFrontend = UserMapper.ToFrontendDto(user, persona, role);
+            UserFrontendDto userFrontend = UserMapper.ToFrontendDto(user, persona, role);
 
             return Ok(new
             {
@@ -115,6 +118,54 @@ namespace DoctorWare.Controllers
                 message = "Registro exitoso. Revisa tu correo para confirmar tu email.",
                 requiresEmailConfirmation = true
             });
+        }
+
+        /// <summary>
+        /// Registro diferenciado de Paciente.
+        /// </summary>
+        [HttpPost("register/patient")]
+        [AllowAnonymous]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegisterPatient([FromBody] RegisterPatientRequest request, CancellationToken cancellationToken)
+        {
+            _ = await userService.RegisterPatientAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                message = "Registro exitoso. Revisa tu correo para confirmar tu email.",
+                requiresEmailConfirmation = true
+            });
+        }
+
+        /// <summary>
+        /// Registro diferenciado de Profesional.
+        /// </summary>
+        [HttpPost("register/professional")]
+        [AllowAnonymous]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegisterProfessional([FromBody] RegisterProfessionalRequest request, CancellationToken cancellationToken)
+        {
+            _ = await userService.RegisterProfessionalAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                message = "Registro exitoso. Revisa tu correo para confirmar tu email y acceder al sistema.",
+                requiresEmailConfirmation = true
+            });
+        }
+
+        /// <summary>
+        /// Obtiene la lista de especialidades médicas.
+        /// </summary>
+        [HttpGet("specialties")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(List<DoctorWare.DTOs.Response.SpecialtyDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSpecialties(CancellationToken cancellationToken)
+        {
+            List<SpecialtyDto> specialties = await specialtyService.GetActiveSpecialtiesAsync(cancellationToken);
+            return Ok(specialties);
         }
 
         /// <summary>
@@ -183,7 +234,7 @@ namespace DoctorWare.Controllers
                 (string accessToken, System.DateTime _) = tokenService.GenerateAccessToken(user, fullName, role);
                 (string refreshToken, System.DateTime _) = tokenService.GenerateRefreshToken(user, role);
 
-                var userFrontend = UserMapper.ToFrontendDto(user, persona, role);
+                UserFrontendDto userFrontend = UserMapper.ToFrontendDto(user, persona, role);
 
                 return Ok(new
                 {
@@ -225,7 +276,7 @@ namespace DoctorWare.Controllers
 
             Models.PERSONAS persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, cancellationToken);
             string role = User.GetRole() ?? await userService.ResolvePrimaryRoleAsync(user.ID_USUARIOS, cancellationToken);
-            var dto = UserMapper.ToFrontendDto(user, persona, role);
+            UserFrontendDto dto = UserMapper.ToFrontendDto(user, persona, role);
             return Ok(dto);
         }
 
@@ -243,7 +294,9 @@ namespace DoctorWare.Controllers
             if (uid <= 0 || string.IsNullOrWhiteSpace(token))
             {
                 if (!string.IsNullOrWhiteSpace(redirectBase))
+                {
                     return Redirect($"{redirectBase}{(redirectBase.Contains('?') ? '&' : '?')}status=error&reason=bad_request");
+                }
                 throw new DoctorWare.Exceptions.BadRequestException(ErrorMessages.BAD_REQUEST);
             }
 

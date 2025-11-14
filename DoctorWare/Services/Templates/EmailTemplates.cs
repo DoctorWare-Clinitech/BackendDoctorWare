@@ -53,6 +53,17 @@ namespace DoctorWare.Services.Templates
 
             return sb.ToString();
         }
+
+        public static string BuildPatientConfirmationEmail(string? fullName, string confirmationUrl)
+        {
+            // Por ahora reutiliza el mismo cuerpo base
+            return BuildConfirmationEmail(fullName, confirmationUrl);
+        }
+
+        public static string BuildProfessionalConfirmationEmail(string? fullName, string confirmationUrl)
+        {
+            // Por ahora reutiliza el mismo cuerpo base
+            return BuildConfirmationEmail(fullName, confirmationUrl);
+        }
     }
 }
-

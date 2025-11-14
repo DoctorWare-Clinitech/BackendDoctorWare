@@ -44,6 +44,7 @@ constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IUserService, Doct
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ITokenService, DoctorWare.Services.Implementation.TokenService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailSender, DoctorWare.Services.Implementation.SmtpEmailSender>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailConfirmationService, DoctorWare.Services.Implementation.EmailConfirmationService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ISpecialtyService, DoctorWare.Services.Implementation.SpecialtyService>();
 
 // ========================================
 // CORS (Lee los orígenes permitidos según ambiente)

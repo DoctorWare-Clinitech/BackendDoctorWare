@@ -14,5 +14,12 @@ namespace DoctorWare.Constants
         public const string INVALID_CREDENTIALS = "Credenciales inválidas.";
         public const string INVALID_REFRESH_TOKEN = "Refresh token inválido o expirado.";
         public const string EMAIL_NOT_CONFIRMED = "El email no está confirmado.";
+
+        // Registro Profesional / Paciente
+        public const string CUIT_INVALID = "CUIT/CUIL inválido.";
+        public const string CUIT_DUPLICADO = "El CUIT/CUIL ya está registrado.";
+        public const string MATRICULA_NACIONAL_DUPLICADA = "La matrícula nacional ya está registrada.";
+        public const string MATRICULA_PROVINCIAL_DUPLICADA = "La matrícula provincial ya está registrada.";
+        public const string ESPECIALIDAD_NO_ENCONTRADA = "La especialidad indicada no existe.";
     }
 }

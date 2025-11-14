@@ -12,7 +12,7 @@ Accept: application/json
 GET {{base}}/swagger/v1/swagger.json
 Accept: application/json
 
-### Registrar usuario (vÃ¡lido)
+### Registrar usuario (válido)
 POST {{base}}/api/auth/register
 Accept: application/json
 Content-Type: application/json
@@ -60,9 +60,9 @@ Content-Type: application/json
   "refreshToken": "{{refresh_token}}"
 }
 
-### Me (requiere bearer) - POST
+### Me (requiere bearer) - GET
 @access_token = {{access_token}}
-POST {{base}}/api/auth/me
+GET {{base}}/api/auth/me
 Authorization: Bearer {{access_token}}
 Accept: application/json
 
@@ -81,4 +81,51 @@ Content-Type: application/json
   "tipoDocumentoCodigo": "DNI",
   "genero": "Prefiere no decirlo"
 }
+
+### Registrar Paciente
+POST {{base}}/api/auth/register/patient
+Accept: application/json
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "email": "juan.perez@example.com",
+  "password": "Password123",
+  "telefono": "1234567890",
+  "nroDocumento": 12345678,
+  "tipoDocumentoCodigo": "DNI",
+  "genero": "Masculino",
+  "obraSocial": "OSDE",
+  "numeroAfiliado": "123456789",
+  "contactoEmergenciaNombre": "Ana Pérez",
+  "contactoEmergenciaTelefono": "+54 9 11 1234 5678",
+  "contactoEmergenciaRelacion": "Esposa"
+}
+
+### Registrar Profesional
+POST {{base}}/api/auth/register/professional
+Accept: application/json
+Content-Type: application/json
+
+{
+  "nombre": "María",
+  "apellido": "González",
+  "email": "maria.gonzalez@example.com",
+  "password": "Password123",
+  "telefono": "1234567890",
+  "nroDocumento": 87654321,
+  "tipoDocumentoCodigo": "DNI",
+  "genero": "Femenino",
+  "matriculaNacional": "MN12345",
+  "matriculaProvincial": "MP67890",
+  "especialidadId": 1,
+  "titulo": "Médico Cirujano",
+  "universidad": "Universidad de Buenos Aires",
+  "cuit_cuil": "20876543210"
+}
+
+### Listar especialidades
+GET {{base}}/api/auth/specialties
+Accept: application/json
 
