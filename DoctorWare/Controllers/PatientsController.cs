@@ -21,7 +21,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(IEnumerable<PatientDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get(
             [FromQuery] string? name,
@@ -37,7 +37,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpGet("summary")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(IEnumerable<PatientSummaryDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Summary([FromQuery] string? professionalId, CancellationToken ct)
         {
@@ -46,7 +46,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById([FromRoute] string id, CancellationToken ct)
@@ -60,7 +60,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken ct)
         {
@@ -69,7 +69,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdatePatientRequest request, CancellationToken ct)
         {
@@ -78,7 +78,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         public async Task<IActionResult> Delete([FromRoute] string id, CancellationToken ct)
         {
             await patientsService.DeleteAsync(id, ct);
@@ -87,7 +87,7 @@ namespace DoctorWare.Controllers
 
         // GET /api/patients/{id}/history -> alias conveniente para el front
         [HttpGet("{id}/history")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         public async Task<IActionResult> History([FromRoute] string id, CancellationToken ct)
         {
             IEnumerable<DoctorWare.DTOs.Response.Medical.MedicalHistoryDto> list = await medicalHistoryService.GetByPatientAsync(id, ct);

@@ -66,5 +66,12 @@ namespace DoctorWare.Repositories.Implementation
             string? result = await con.QueryFirstOrDefaultAsync<string?>(new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
             return string.IsNullOrWhiteSpace(result) ? null : result.Trim();
         }
+
+        public async Task<USUARIOS?> GetByPasswordResetTokenAsync(string tokenHash, CancellationToken cancellationToken = default)
+        {
+            using IDbConnection con = CreateConnection();
+            string sql = $"select {SelectColumns} from {Table} where \"TOKEN_RECUPERACION\" = @token limit 1";
+            return await con.QuerySingleOrDefaultAsync<USUARIOS>(new CommandDefinition(sql, new { token = tokenHash }, cancellationToken: cancellationToken));
+        }
     }
 }

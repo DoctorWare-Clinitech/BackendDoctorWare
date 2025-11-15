@@ -25,7 +25,7 @@ namespace DoctorWare.Controllers
 
         // GET /api/appointments
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(IEnumerable<AppointmentDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get(
             [FromQuery] string? professionalId,
@@ -42,7 +42,7 @@ namespace DoctorWare.Controllers
 
         // GET /api/appointments/{id}
         [HttpGet("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(AppointmentDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById([FromRoute] string id, CancellationToken ct)
@@ -57,7 +57,7 @@ namespace DoctorWare.Controllers
 
         // POST /api/appointments
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(AppointmentDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken ct)
         {
@@ -68,7 +68,7 @@ namespace DoctorWare.Controllers
 
         // PUT /api/appointments/{id}
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(typeof(AppointmentDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateAppointmentRequest request, CancellationToken ct)
         {
@@ -79,7 +79,7 @@ namespace DoctorWare.Controllers
 
         // DELETE /api/appointments/{id}
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Delete([FromRoute] string id, [FromQuery] string? reason, CancellationToken ct)
         {
@@ -90,7 +90,7 @@ namespace DoctorWare.Controllers
 
         // GET /api/appointments/stats
         [HttpGet("stats")]
-        [Authorize]
+        [Authorize(Roles = "professional,secretary,admin")]
         public async Task<IActionResult> Stats([FromQuery] string? professionalId, CancellationToken ct)
         {
             (int total, int scheduled, int confirmed, int completed, int cancelled, int noShow) = await service.GetStatsAsync(professionalId, ct);

@@ -14,6 +14,7 @@ namespace DoctorWare.Constants
         public const string INVALID_CREDENTIALS = "Credenciales inválidas.";
         public const string INVALID_REFRESH_TOKEN = "Refresh token inválido o expirado.";
         public const string EMAIL_NOT_CONFIRMED = "El email no está confirmado.";
+        public const string PASSWORD_RESET_TOKEN_INVALID = "El enlace de recuperación es inválido o expiró.";
 
         // Registro Profesional / Paciente
         public const string CUIT_INVALID = "CUIT/CUIL inválido.";

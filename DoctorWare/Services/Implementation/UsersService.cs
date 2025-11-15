@@ -8,7 +8,11 @@ using DoctorWare.Models;
 using DoctorWare.Repositories.Interfaces;
 using DoctorWare.Services.Interfaces;
 using DoctorWare.Utils;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using System.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DoctorWare.Services.Implementation
 {
@@ -18,18 +22,21 @@ namespace DoctorWare.Services.Implementation
         private readonly IPersonasRepository personasRepository;
         private readonly IDbConnectionFactory factory;
         private readonly IEmailConfirmationService emailConfirmationService;
+        private readonly IConfiguration configuration;
 
         public UsersService(
             IUsuariosRepository usuariosRepository,
             IPersonasRepository personasRepository,
             IDbConnectionFactory factory,
-            IEmailConfirmationService emailConfirmationService)
+            IEmailConfirmationService emailConfirmationService,
+            IConfiguration configuration)
             : base(usuariosRepository)
         {
             this.usuariosRepository = usuariosRepository;
             this.personasRepository = personasRepository;
             this.factory = factory;
             this.emailConfirmationService = emailConfirmationService;
+            this.configuration = configuration;
         }
 
         protected override async Task ValidateAsync(USUARIOS entity)
@@ -81,7 +88,7 @@ namespace DoctorWare.Services.Implementation
 
                 int estadoUsuarioId = await con.ExecuteScalarAsync<int?>(
                     "select \"ID_ESTADOS_USUARIO\" from public.\"ESTADOS_USUARIO\" where \"NOMBRE\" = @nombre limit 1",
-                    new { nombre = "Pendiente de ConfirmaciÃ³n" }, tx) ??
+                    new { nombre = "Pendiente de Confirmación" }, tx) ??
                     await con.ExecuteScalarAsync<int>(
                         "select \"ID_ESTADOS_USUARIO\" from public.\"ESTADOS_USUARIO\" where \"NOMBRE\" = @nombre limit 1",
                         new { nombre = "Activo" }, tx);
@@ -106,6 +113,17 @@ namespace DoctorWare.Services.Implementation
                 };
 
                 USUARIOS usuarioCreado = await usuariosRepository.InsertWithConnectionAsync(usuario, con, tx, cancellationToken);
+
+                // Vincular rol por defecto (PACIENTE) para registros genéricos
+                int? roleId = await con.ExecuteScalarAsync<int?>(
+                    "select \"ID_ROLES\" from public.\"ROLES\" where upper(\"NOMBRE\") = upper(@name) limit 1",
+                    new { name = "PACIENTE" }, tx);
+                if (roleId.HasValue)
+                {
+                    await con.ExecuteAsync(
+                        "insert into public.\"USUARIOS_ROLES\" (\"ID_USUARIOS\", \"ID_ROLES\", \"FECHA_CREACION\", \"ULTIMA_ACTUALIZACION\") values (@u, @r, @now, @now)",
+                        new { u = usuarioCreado.ID_USUARIOS, r = roleId.Value, now }, tx);
+                }
 
                 tx.Commit();
 
@@ -414,6 +432,76 @@ namespace DoctorWare.Services.Implementation
                 tx.Rollback();
                 throw;
             }
+        }
+
+        public async Task<PasswordResetTokenResult?> GeneratePasswordResetTokenAsync(string email, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return null;
+            }
+
+            string normalized = email.Trim().ToLowerInvariant();
+            USUARIOS? user = await usuariosRepository.GetByEmailAsync(normalized, ct);
+            if (user is null || !user.ACTIVO)
+            {
+                return null;
+            }
+
+            string token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+            string hashed = ComputePasswordResetTokenHash(token);
+            DateTime now = DateTime.UtcNow;
+            user.TOKEN_RECUPERACION = hashed;
+            user.TOKEN_EXPIRACION = now.AddMinutes(GetPasswordResetMinutes());
+            user.ULTIMA_ACTUALIZACION = now;
+            await usuariosRepository.UpdateAsync(user, ct);
+
+            PERSONAS? persona = await personasRepository.GetByIdAsync(user.ID_PERSONAS, ct);
+            string fullName = persona is null ? string.Empty : $"{persona.NOMBRE} {persona.APELLIDO}".Trim();
+
+            return new PasswordResetTokenResult
+            {
+                Email = normalized,
+                FullName = fullName,
+                Token = token,
+                UserId = user.ID_USUARIOS
+            };
+        }
+
+        public async Task ResetPasswordAsync(string token, string newPassword, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            {
+                throw new BadRequestException(ErrorMessages.BAD_REQUEST);
+            }
+
+            string hashed = ComputePasswordResetTokenHash(token);
+            USUARIOS? user = await usuariosRepository.GetByPasswordResetTokenAsync(hashed, ct);
+            if (user is null || user.TOKEN_EXPIRACION is null || user.TOKEN_EXPIRACION <= DateTime.UtcNow)
+            {
+                throw new UnauthorizedAccessException(ErrorMessages.PASSWORD_RESET_TOKEN_INVALID);
+            }
+
+            user.PASSWORD_HASH = PasswordHasher.Hash(newPassword);
+            user.TOKEN_RECUPERACION = string.Empty;
+            user.TOKEN_EXPIRACION = null;
+            user.ULTIMA_ACTUALIZACION = DateTime.UtcNow;
+            await usuariosRepository.UpdateAsync(user, ct);
+        }
+
+        private string ComputePasswordResetTokenHash(string token)
+        {
+            string secret = configuration["PasswordReset:TokenSecret"] ?? "doctorware-reset-secret";
+            using SHA256 sha = SHA256.Create();
+            byte[] data = Encoding.UTF8.GetBytes($"{token}|{secret}");
+            byte[] hash = sha.ComputeHash(data);
+            return Convert.ToHexString(hash);
+        }
+
+        private int GetPasswordResetMinutes()
+        {
+            int minutes = configuration.GetValue<int?>("PasswordReset:TokenMinutes") ?? 60;
+            return minutes > 0 ? minutes : 60;
         }
     }
 }

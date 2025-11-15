@@ -52,6 +52,14 @@ constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IMedicalHistorySer
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IDiagnosesService, DoctorWare.Services.Implementation.DiagnosesService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IAllergiesService, DoctorWare.Services.Implementation.AllergiesService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IMedicationsService, DoctorWare.Services.Implementation.MedicationsService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IScheduleService, DoctorWare.Services.Implementation.ScheduleService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IAppointmentReminderService, DoctorWare.Services.Implementation.AppointmentReminderService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IPublicAppointmentsService, DoctorWare.Services.Implementation.PublicAppointmentsService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IPatientPortalService, DoctorWare.Services.Implementation.PatientPortalService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IPatientIdentityService, DoctorWare.Services.Implementation.PatientIdentityService>();
+constructor.Services.AddSingleton<DoctorWare.Services.Interfaces.IDataProtectionService, DoctorWare.Services.Implementation.AesDataProtectionService>();
+constructor.Services.AddSingleton<DoctorWare.Services.Interfaces.IRequestMetricsService, DoctorWare.Services.Implementation.RequestMetricsService>();
+constructor.Services.AddHostedService<DoctorWare.Services.Implementation.AppointmentReminderWorker>();
 
 // ========================================
 // CORS (Lee los orígenes permitidos según ambiente)
@@ -248,6 +256,7 @@ app.MapGet("/openapi/v1.json", () => Results.Redirect("/swagger/v1/swagger.json"
 app.MapHealthChecks("/health");
 
 app.UseSerilogRequestLogging();
+app.UseMiddleware<RequestMetricsMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("PermitirAngular");

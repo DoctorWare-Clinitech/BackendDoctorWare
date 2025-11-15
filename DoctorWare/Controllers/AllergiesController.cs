@@ -22,7 +22,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpGet("patient/{patientId}")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(IEnumerable<AllergyDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByPatient([FromRoute] string patientId, CancellationToken ct)
         {
@@ -31,7 +31,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(AllergyDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> Create([FromBody] CreateAllergyRequest request, CancellationToken ct)
         {
@@ -40,7 +40,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(AllergyDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateAllergyRequest request, CancellationToken ct)
         {
@@ -49,7 +49,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPatch("{id}/deactivate")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         public async Task<IActionResult> Deactivate([FromRoute] string id, CancellationToken ct)
         {
@@ -58,4 +58,3 @@ namespace DoctorWare.Controllers
         }
     }
 }
-

@@ -7,11 +7,10 @@ namespace DoctorWare.Services.Interfaces
     public interface IUserService : IService<USUARIOS, int>
     {
         Task<UserDto> RegisterAsync(RegisterUserRequest request, CancellationToken cancellationToken = default);
-
         Task<string> ResolvePrimaryRoleAsync(int userId, CancellationToken cancellationToken = default);
-
         Task<UserDto> RegisterPatientAsync(RegisterPatientRequest request, CancellationToken ct);
-
         Task<UserDto> RegisterProfessionalAsync(RegisterProfessionalRequest request, CancellationToken ct);
+        Task<PasswordResetTokenResult?> GeneratePasswordResetTokenAsync(string email, CancellationToken ct);
+        Task ResetPasswordAsync(string token, string newPassword, CancellationToken ct);
     }
 }

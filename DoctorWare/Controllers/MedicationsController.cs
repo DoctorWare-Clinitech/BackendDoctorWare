@@ -23,7 +23,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpGet("patient/{patientId}")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(IEnumerable<MedicationDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByPatient([FromRoute] string patientId, CancellationToken ct)
         {
@@ -32,7 +32,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(MedicationDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> Create([FromBody] CreateMedicationRequest request, CancellationToken ct)
         {
@@ -42,7 +42,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(MedicationDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMedicationRequest request, CancellationToken ct)
         {
@@ -51,7 +51,7 @@ namespace DoctorWare.Controllers
         }
 
         [HttpPatch("{id}/discontinue")]
-        [Authorize]
+        [Authorize(Roles = "professional,admin")]
         [ProducesResponseType(typeof(MedicationDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Discontinue([FromRoute] string id, CancellationToken ct)
         {
@@ -60,4 +60,3 @@ namespace DoctorWare.Controllers
         }
     }
 }
-

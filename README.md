@@ -185,6 +185,14 @@ Autenticación
     }
     ```
 
+- POST `/api/auth/forgot-password`
+  - Body: `{ "email": "usuario@example.com" }`
+  - Siempre responde 200 con mensaje genérico para evitar enumeración.
+
+- POST `/api/auth/reset-password`
+  - Body: `{ "token": "abc...", "newPassword": "NuevoPass123" }`
+  - Valida token vigente y actualiza la contraseña.
+
 Utilidad
 - GET `/health` → estado de salud de la API/DB.
 - GET `/` → información básica de la API.
@@ -208,6 +216,43 @@ Notas
 - El filtro `professionalId` espera el ID de usuario (JWT `sub`) y el backend lo traduce internamente al `ID_PROFESIONALES` correspondiente.
 - Estados mapeados (DB → Front): Programado→`scheduled`, Confirmado→`confirmed`, En Espera→`in_progress`, Atendido→`completed`, Cancelado→`cancelled`, Ausente→`no_show`.
 - Tipos mapeados (DB → Front): Consulta→`first_visit`, Seguimiento→`follow_up`, Estudio→`specialist`, Cirugía/Control General/Vacunación→`routine`.
+
+Portal público (pacientes)
+- GET `/api/public/professionals/{professionalId}/availability?date=2025-11-15`
+  - Devuelve los `ScheduleAvailableSlotDto` del profesional (lista de horas con `available`, `appointmentId` y `duration`).
+  - No requiere autenticación. Ideal para mostrar disponibilidad antes de registrarse/iniciar sesión.
+- POST `/api/public/appointments`
+  - Permite solicitar un turno desde el portal público. Body:
+    ```json
+    {
+      "professionalId": "45",
+      "date": "2025-11-15T00:00:00Z",
+      "startTime": "09:00",
+      "duration": 30,
+      "type": "first_visit",
+      "reason": "Control general",
+      "patient": {
+        "firstName": "Juan",
+        "lastName": "Pérez",
+        "email": "juan@example.com",
+        "phone": "1160000000",
+        "dni": "30123456",
+        "dateOfBirth": "1990-05-02T00:00:00Z",
+        "gender": "male"
+      }
+    }
+    ```
+  - Si el paciente ya existe (por `ExistingPatientId`, `ExistingPatientUserId`, DNI o email) se reutiliza; si no, se crea con los datos provistos.
+
+Portal autenticado (pacientes)
+- GET `/api/me/appointments[?startDate=&endDate=]` → lista de turnos del paciente autenticado.
+- GET `/api/me/appointments/{id}` → detalle del turno (valida pertenencia).
+- DELETE `/api/me/appointments/{id}` → cancela su turno (opcional `reason`).
+- GET `/api/me/history` → entradas de historia clínica propias.
+
+Métricas y observabilidad
+- GET `/api/metrics/summary` (roles `admin` o `professional`) → brinda `totalRequests`, `averageMilliseconds`, `maxMilliseconds` y el desglose por endpoint.
+- Middleware `RequestMetricsMiddleware` registra la latencia de cada request y persiste un snapshot en memoria.
 
 Pacientes
 - GET `/api/patients` → lista con filtros (`name`, `dni`, `email`, `phone`, `professionalId`, `isActive`)
@@ -249,8 +294,10 @@ Diagnósticos / Alergias / Medicación
 - JWT: `Jwt:{ Secret, Issuer, Audience, AccessTokenMinutes, RefreshTokenMinutes }`
 - Email SMTP: `Email:Smtp:{ Host, Port, EnableSsl, User, Password, FromEmail, FromName }`
 - Confirmación de email: `EmailConfirmation:{ TokenMinutes (0 = sin vencimiento), FrontendConfirmUrl, BackendConfirmRedirectUrl, ResendCooldownSeconds }`
+- Cifrado en reposo: `DataProtection:Key` (32 caracteres hex recomendados) para encriptar notas y contactos sensibles.
+- Recuperación de contraseña: `PasswordReset:{ FrontendResetUrl, TokenMinutes (60 por defecto), TokenSecret }`
 
-Logs: `BackendDoctorWare/DoctorWare/logs`.
+Logs: `BackendDoctorWare/DoctorWare/logs`. Métricas básicas en `/api/metrics/summary`.
 
 Notas sobre roles
 - Registro de Paciente: asigna rol `PACIENTE` en `USUARIOS_ROLES`.

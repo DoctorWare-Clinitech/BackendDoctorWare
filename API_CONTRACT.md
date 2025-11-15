@@ -62,6 +62,14 @@ Estados comunes:
 - GET `/auth/me`
   - 200: `UserFrontendDto`
 
+- POST `/auth/forgot-password`
+  - Body: `{ "email": "user@example.com" }`
+  - Respuesta 200 genérica: `{ "message": "Si el email está registrado..." }`
+
+- POST `/auth/reset-password`
+  - Body: `{ "token": "...", "newPassword": "Nueva123" }`
+  - 200: `{ "message": "Contraseña actualizada correctamente." }`
+
 Notas
 - Tras login, enviar `Authorization: Bearer {token}` en endpoints protegidos.
 - Guardar `refreshToken` para renovar sesiones.
@@ -85,6 +93,55 @@ Notas
   - `userId` se utiliza como `professionalId` en el frontend (ID del usuario).
 
 - GET `/professionals/{id}`
+
+---
+
+## Portal público
+
+- GET `/public/professionals/{professionalId}/availability?date=2025-11-15`
+  - 200: `[ { date, time, duration, available, appointmentId } ]`
+  - No requiere autenticación. `duration` indica la cantidad de minutos del turno.
+
+- POST `/public/appointments`
+  - Body:
+    ```json
+    {
+      "professionalId": "45",
+      "date": "2025-11-15T00:00:00Z",
+      "startTime": "09:00",
+      "duration": 30,
+      "type": "first_visit",
+      "reason": "Control anual",
+      "patient": {
+        "firstName": "Juan",
+        "lastName": "Pérez",
+        "email": "juan@example.com",
+        "phone": "1160000000",
+        "dni": "30123456",
+        "dateOfBirth": "1990-05-02T00:00:00Z",
+        "gender": "male"
+      }
+    }
+    ```
+  - Opcionales: `existingPatientId`, `existingPatientUserId`. Si no se envían, se busca por DNI/email y se crea paciente en caso de no existir.
+  - 201: `AppointmentDto`
+
+---
+
+## Portal autenticado (paciente)
+
+- GET `/me/appointments?startDate=&endDate=`
+  - Requiere rol `patient`.
+  - 200: `AppointmentDto[]` del paciente autenticado.
+
+- GET `/me/appointments/{id}`
+  - Devuelve el turno sólo si pertenece al paciente.
+
+- DELETE `/me/appointments/{id}?reason=`
+  - Cancela el turno propio (estado → `cancelled`).
+
+- GET `/me/history`
+  - 200: `MedicalHistoryDto[]` del paciente autenticado.
 
 ---
 
@@ -159,6 +216,26 @@ Notas
 Mapeos DB ↔ Front (interno)
 - Estados: `Programado↔scheduled`, `Confirmado↔confirmed`, `En Espera↔in_progress`, `Atendido↔completed`, `Cancelado↔cancelled`, `Ausente↔no_show`
 - Tipos: `Consulta↔first_visit`, `Seguimiento↔follow_up`, `Estudio↔specialist`, `Cirugía/Control General/Vacunación↔routine`
+
+---
+
+## Métricas
+
+- GET `/metrics/summary`
+  - Roles permitidos: `admin`, `professional`.
+  - 200:
+    ```json
+    {
+      "totalRequests": 120,
+      "averageMilliseconds": 135.4,
+      "maxMilliseconds": 890,
+      "requestsByPath": {
+        "/api/auth/login": 25,
+        "/api/appointments": 40
+      },
+      "generatedAtUtc": "2025-02-01T12:00:00Z"
+    }
+    ```
 
 ---
 
@@ -281,4 +358,3 @@ this.http.post<Patient>(`${environment.apiBaseUrl}/patients`, dto)
 - `professionalId` en query/body siempre es el ID de usuario (claim `sub` en JWT). El backend lo resuelve al `ID_PROFESIONALES`.
 - Serialización JSON en camelCase, timezone UTC.
 - Swagger: `http://localhost:3000/swagger`
-

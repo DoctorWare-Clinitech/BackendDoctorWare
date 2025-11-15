@@ -2,16 +2,19 @@ using DoctorWare.Constants;
 using DoctorWare.DTOs.Requests;
 using DoctorWare.DTOs.Response;
 using DoctorWare.DTOs.Response.Frontend;
+using DoctorWare.DTOs.Response;
 using DoctorWare.Helpers;
 using DoctorWare.Mappers;
 using DoctorWare.Repositories.Interfaces;
 using DoctorWare.Services.Interfaces;
+using DoctorWare.Services.Templates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Net;
 
 namespace DoctorWare.Controllers
 {
@@ -32,6 +35,7 @@ namespace DoctorWare.Controllers
         private readonly IEmailConfirmationService emailConfirmationService;
         private readonly ILogger<AuthController> logger;
         private readonly ISpecialtyService specialtyService;
+        private readonly IEmailSender emailSender;
 
         public AuthController(
             IUserService userService,
@@ -41,7 +45,8 @@ namespace DoctorWare.Controllers
             IConfiguration configuration,
             IEmailConfirmationService emailConfirmationService,
             ILogger<AuthController> logger,
-            ISpecialtyService specialtyService)
+            ISpecialtyService specialtyService,
+            IEmailSender emailSender)
         {
             this.userService = userService;
             this.usuariosRepository = usuariosRepository;
@@ -51,6 +56,7 @@ namespace DoctorWare.Controllers
             this.emailConfirmationService = emailConfirmationService;
             this.logger = logger;
             this.specialtyService = specialtyService;
+            this.emailSender = emailSender;
         }
 
         /// <summary>
@@ -166,6 +172,42 @@ namespace DoctorWare.Controllers
         {
             List<SpecialtyDto> specialties = await specialtyService.GetActiveSpecialtiesAsync(cancellationToken);
             return Ok(specialties);
+        }
+
+        /// <summary>
+        /// Solicita un enlace para restablecer la contraseña asociada al email.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+        {
+            string email = request.Email?.Trim() ?? string.Empty;
+            PasswordResetTokenResult? tokenResult = await userService.GeneratePasswordResetTokenAsync(email, cancellationToken);
+            if (tokenResult is not null)
+            {
+                string resetBaseUrl = configuration["PasswordReset:FrontendResetUrl"] ?? string.Empty;
+                string resetUrl = string.IsNullOrWhiteSpace(resetBaseUrl)
+                    ? tokenResult.Token
+                    : $"{resetBaseUrl}?token={WebUtility.UrlEncode(tokenResult.Token)}";
+
+                string body = EmailTemplates.BuildPasswordResetEmail(tokenResult.FullName, resetUrl);
+                await emailSender.SendEmailAsync(tokenResult.Email, "Restablecer contraseña - DoctorWare", body, cancellationToken);
+            }
+
+            return Ok(new { message = "Si el email está registrado, enviaremos un enlace para restablecer tu contraseña." });
+        }
+
+        /// <summary>
+        /// Restablece la contraseña utilizando un token válido.
+        /// </summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+        {
+            await userService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+            return Ok(new { message = "Contraseña actualizada correctamente." });
         }
 
         /// <summary>

@@ -2,10 +2,13 @@ using Dapper;
 using DoctorWare.Data.Interfaces;
 using DoctorWare.DTOs.Requests.Patients;
 using DoctorWare.DTOs.Response.Patients;
+using DoctorWare.Services.Interfaces;
 using System.Data;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace DoctorWare.Services.Implementation
@@ -13,10 +16,12 @@ namespace DoctorWare.Services.Implementation
     public class PatientsService : DoctorWare.Services.Interfaces.IPatientsService
     {
         private readonly IDbConnectionFactory factory;
+        private readonly IDataProtectionService dataProtectionService;
 
-        public PatientsService(IDbConnectionFactory factory)
+        public PatientsService(IDbConnectionFactory factory, IDataProtectionService dataProtectionService)
         {
             this.factory = factory;
+            this.dataProtectionService = dataProtectionService;
         }
 
         public async Task<IEnumerable<PatientDto>> GetAsync(string? name, string? dni, string? email, string? phone, string? professionalUserId, bool? isActive, CancellationToken ct)
@@ -128,9 +133,9 @@ namespace DoctorWare.Services.Implementation
                 },
                 EmergencyContact = new EmergencyContactDto
                 {
-                    Name = r.CONTACTO_EMERGENCIA_NOMBRE as string ?? string.Empty,
-                    Phone = r.CONTACTO_EMERGENCIA_TELEFONO as string ?? string.Empty,
-                    Relationship = r.CONTACTO_EMERGENCIA_RELACION as string ?? string.Empty
+                    Name = DecryptNullable(r.CONTACTO_EMERGENCIA_NOMBRE as string) ?? string.Empty,
+                    Phone = DecryptNullable(r.CONTACTO_EMERGENCIA_TELEFONO as string) ?? string.Empty,
+                    Relationship = DecryptNullable(r.CONTACTO_EMERGENCIA_RELACION as string) ?? string.Empty
                 },
                 MedicalInsurance = (r.SEGURO_PROVEEDOR == null && r.SEGURO_PLAN == null && r.SEGURO_NUMERO_AFILIADO == null)
                     ? null
@@ -151,7 +156,7 @@ namespace DoctorWare.Services.Implementation
                     FamilyHistory = null
                 },
                 ProfessionalId = Convert.ToString(r.IdUsuarioProf ?? r.IdProf),
-                Notes = r.NOTAS_GENERALES as string,
+                Notes = DecryptNullable(r.NOTAS_GENERALES as string),
                 IsActive = (bool)r.ACTIVO,
                 CreatedAt = (DateTime)r.FECHA_CREACION,
                 UpdatedAt = (DateTime)r.ULTIMA_ACTUALIZACION
@@ -243,10 +248,10 @@ namespace DoctorWare.Services.Implementation
                 segProv = request.MedicalInsurance?.Provider,
                 segPlan = request.MedicalInsurance?.PlanName,
                 segNum = request.MedicalInsurance?.MemberNumber,
-                ecn = request.EmergencyContact.Name,
-                ect = request.EmergencyContact.Phone,
-                ecr = request.EmergencyContact.Relationship,
-                notas = request.Notes,
+                ecn = EncryptNullable(request.EmergencyContact.Name),
+                ect = EncryptNullable(request.EmergencyContact.Phone),
+                ecr = EncryptNullable(request.EmergencyContact.Relationship),
+                notas = EncryptNullable(request.Notes),
                 idPer = idPersona,
                 idGs = idGrupo,
                 idProf = idProfesional
@@ -312,9 +317,9 @@ namespace DoctorWare.Services.Implementation
             pPa.Add("id", int.Parse(id));
             if (request.EmergencyContact != null)
             {
-                setPa.Add("\"CONTACTO_EMERGENCIA_NOMBRE\" = @ecn"); pPa.Add("ecn", request.EmergencyContact.Name);
-                setPa.Add("\"CONTACTO_EMERGENCIA_TELEFONO\" = @ect"); pPa.Add("ect", request.EmergencyContact.Phone);
-                setPa.Add("\"CONTACTO_EMERGENCIA_RELACION\" = @ecr"); pPa.Add("ecr", request.EmergencyContact.Relationship);
+                setPa.Add("\"CONTACTO_EMERGENCIA_NOMBRE\" = @ecn"); pPa.Add("ecn", EncryptNullable(request.EmergencyContact.Name));
+                setPa.Add("\"CONTACTO_EMERGENCIA_TELEFONO\" = @ect"); pPa.Add("ect", EncryptNullable(request.EmergencyContact.Phone));
+                setPa.Add("\"CONTACTO_EMERGENCIA_RELACION\" = @ecr"); pPa.Add("ecr", EncryptNullable(request.EmergencyContact.Relationship));
             }
             if (request.MedicalInsurance != null)
             {
@@ -324,7 +329,7 @@ namespace DoctorWare.Services.Implementation
             }
             if (request.Notes != null)
             {
-                setPa.Add("\"NOTAS_GENERALES\" = @notes"); pPa.Add("notes", request.Notes);
+                setPa.Add("\"NOTAS_GENERALES\" = @notes"); pPa.Add("notes", EncryptNullable(request.Notes));
             }
             if (request.IsActive.HasValue)
             {
@@ -414,6 +419,24 @@ namespace DoctorWare.Services.Implementation
             string[] parts = (street ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
             string? last = parts.LastOrDefault();
             return last != null && int.TryParse(last, out _) ? last : string.Empty;
+        }
+
+        private string? EncryptNullable(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+            return dataProtectionService.Encrypt(value);
+        }
+
+        private string? DecryptNullable(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+            return dataProtectionService.Decrypt(value) ?? value;
         }
 
         private static async Task<Dictionary<int, List<string>>> LoadAlergiasAsync(IDbConnection con, int[] ids)
