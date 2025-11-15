@@ -91,7 +91,7 @@ namespace DoctorWare.Data
                         }
 
                         // Ejecutar script en transacción y registrar
-                        using var tx = conexion.BeginTransaction();
+                        using System.Data.IDbTransaction tx = conexion.BeginTransaction();
                         Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
                         await conexion.ExecuteAsync(scriptSQL, commandTimeout: 300, transaction: tx);
                         await conexion.ExecuteAsync(

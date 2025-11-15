@@ -11,7 +11,11 @@ namespace DoctorWare.Helpers
                          ?? principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                          ?? principal.FindFirst("sub")?.Value;
 
-            if (int.TryParse(sub, out var id)) return id;
+            int id;
+            if (int.TryParse(sub, out id))
+            {
+                return id;
+            }
             return null;
         }
 

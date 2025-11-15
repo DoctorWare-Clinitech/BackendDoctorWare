@@ -1,0 +1,158 @@
+{
+  "info": {
+    "_postman_id": "9b9a8ea4-3a7a-4e47-9d2f-0a0f6a9c0d01",
+    "name": "DoctorWare API (Frontend)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección para consumir la API de DoctorWare desde Postman. Usa variables {{api}} y {{token}}."
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{api}}/auth/login", "host": ["{{api}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('userId', json.user?.id || '');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{api}}/auth/me", "host": ["{{api}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{api}}/auth/refresh", "host": ["{{api}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Resend Confirmation",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@test.com\"\n}" },
+            "url": { "raw": "{{api}}/auth/resend-confirmation", "host": ["{{api}}"], "path": ["auth", "resend-confirmation"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Specialties",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{api}}/specialties", "host": ["{{api}}"], "path": ["specialties"] } } },
+        { "name": "Subspecialties by Id", "request": { "method": "GET", "url": { "raw": "{{api}}/specialties/1/subspecialties", "host": ["{{api}}"], "path": ["specialties","1","subspecialties"] } } }
+      ]
+    },
+    {
+      "name": "Professionals",
+      "item": [
+        { "name": "List (filters)", "request": { "method": "GET", "url": { "raw": "{{api}}/professionals?specialtyId=1&name=ana", "host": ["{{api}}"], "path": ["professionals"], "query": [ {"key":"specialtyId","value":"1"}, {"key":"name","value":"ana"} ] } } },
+        { "name": "Get by Id", "request": { "method": "GET", "url": { "raw": "{{api}}/professionals/1", "host": ["{{api}}"], "path": ["professionals","1"] } } }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        { "name": "List (filters)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/patients?name=juan", "host": ["{{api}}"], "path": ["patients"], "query": [ {"key":"name","value":"juan"} ] } } },
+        { "name": "Get by Id", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/patients/{{patientId}}", "host": ["{{api}}"], "path": ["patients","{{patientId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"phone\": \"11...\",\n  \"dni\": \"30123456\",\n  \"dateOfBirth\": \"1990-05-02T00:00:00Z\",\n  \"gender\": \"male\",\n  \"address\": {\"street\":\"Calle 123\",\"city\":\"CABA\",\"state\":\"BA\",\"zipCode\":\"1000\",\"country\":\"AR\"},\n  \"emergencyContact\": {\"name\":\"Ana\",\"phone\":\"...\",\"relationship\":\"Esposa\"},\n  \"medicalInsurance\": {\"provider\":\"OSDE\",\"planName\":\"310\",\"memberNumber\":\"ABC\"},\n  \"professionalId\": \"{{professionalId}}\"\n}" }, "url": { "raw": "{{api}}/patients", "host": ["{{api}}"], "path": ["patients"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"email\": \"nuevo@email.com\"\n}" }, "url": { "raw": "{{api}}/patients/{{patientId}}", "host": ["{{api}}"], "path": ["patients","{{patientId}}"] } } },
+        { "name": "Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/patients/{{patientId}}", "host": ["{{api}}"], "path": ["patients","{{patientId}}"] } } },
+        { "name": "Summary", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/patients/summary", "host": ["{{api}}"], "path": ["patients","summary"] } } },
+        { "name": "History (alias)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/patients/{{patientId}}/history", "host": ["{{api}}"], "path": ["patients","{{patientId}}","history"] } } }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        { "name": "List (filters)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/appointments?professionalId={{professionalId}}", "host": ["{{api}}"], "path": ["appointments"], "query": [ {"key":"professionalId","value":"{{professionalId}}"} ] } } },
+        { "name": "Get by Id", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/appointments/{{appointmentId}}", "host": ["{{api}}"], "path": ["appointments","{{appointmentId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"professionalId\": \"{{professionalId}}\",\n  \"date\": \"2025-11-15T00:00:00Z\",\n  \"startTime\": \"09:00\",\n  \"duration\": 30,\n  \"type\": \"first_visit\",\n  \"reason\": \"Control anual\",\n  \"notes\": \"Traer estudios\"\n}" }, "url": { "raw": "{{api}}/appointments", "host": ["{{api}}"], "path": ["appointments"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"status\": \"confirmed\"\n}" }, "url": { "raw": "{{api}}/appointments/{{appointmentId}}", "host": ["{{api}}"], "path": ["appointments","{{appointmentId}}"] } } },
+        { "name": "Cancel", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/appointments/{{appointmentId}}?reason=No%20asiste", "host": ["{{api}}"], "path": ["appointments","{{appointmentId}}"], "query": [ {"key":"reason","value":"No asiste"} ] } } },
+        { "name": "Stats", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/appointments/stats?professionalId={{professionalId}}", "host": ["{{api}}"], "path": ["appointments","stats"], "query": [ {"key":"professionalId","value":"{{professionalId}}"} ] } } }
+      ]
+    },
+    {
+      "name": "Medical History",
+      "item": [
+        { "name": "By Patient", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/medical-history/patient/{{patientId}}", "host": ["{{api}}"], "path": ["medical-history","patient","{{patientId}}"] } } },
+        { "name": "Get by Id", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/medical-history/{{historyId}}", "host": ["{{api}}"], "path": ["medical-history","{{historyId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"type\": \"consultation\",\n  \"date\": \"2025-11-15T13:00:00Z\",\n  \"title\": \"Consulta general\",\n  \"description\": \"Dolor torácico\",\n  \"diagnosis\": \"Gastroenteritis\",\n  \"treatment\": \"Reposo\",\n  \"observations\": \"Reevaluar 48h\",\n  \"attachments\": []\n}" }, "url": { "raw": "{{api}}/medical-history", "host": ["{{api}}"], "path": ["medical-history"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"notes\": \"Observación actualizada\"\n}" }, "url": { "raw": "{{api}}/medical-history/{{historyId}}", "host": ["{{api}}"], "path": ["medical-history","{{historyId}}"] } } },
+        { "name": "Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/medical-history/{{historyId}}", "host": ["{{api}}"], "path": ["medical-history","{{historyId}}"] } } }
+      ]
+    },
+    {
+      "name": "Diagnoses",
+      "item": [
+        { "name": "By Patient", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/diagnoses/patient/{{patientId}}", "host": ["{{api}}"], "path": ["diagnoses","patient","{{patientId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"code\": \"J10\",\n  \"name\": \"Gripe\",\n  \"description\": \"Cuadro febril\",\n  \"severity\": \"moderate\",\n  \"diagnosisDate\": \"2025-11-15T13:00:00Z\",\n  \"status\": \"active\",\n  \"notes\": \"Indicar reposo\"\n}" }, "url": { "raw": "{{api}}/diagnoses", "host": ["{{api}}"], "path": ["diagnoses"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"notes\": \"Control en 1 semana\"\n}" }, "url": { "raw": "{{api}}/diagnoses/{{diagnosisId}}", "host": ["{{api}}"], "path": ["diagnoses","{{diagnosisId}}"] } } }
+      ]
+    },
+    {
+      "name": "Allergies",
+      "item": [
+        { "name": "By Patient", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/allergies/patient/{{patientId}}", "host": ["{{api}}"], "path": ["allergies","patient","{{patientId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"allergen\": \"Penicilina\",\n  \"type\": \"medication\",\n  \"severity\": \"high\",\n  \"symptoms\": \"Urticaria\",\n  \"diagnosedDate\": \"2020-01-01T00:00:00Z\",\n  \"notes\": \"Evitar betalactámicos\"\n}" }, "url": { "raw": "{{api}}/allergies", "host": ["{{api}}"], "path": ["allergies"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"severity\": \"moderate\"\n}" }, "url": { "raw": "{{api}}/allergies/{{allergyId}}", "host": ["{{api}}"], "path": ["allergies","{{allergyId}}"] } } },
+        { "name": "Deactivate", "request": { "method": "PATCH", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/allergies/{{allergyId}}/deactivate", "host": ["{{api}}"], "path": ["allergies","{{allergyId}}","deactivate"] } } }
+      ]
+    },
+    {
+      "name": "Medications",
+      "item": [
+        { "name": "By Patient", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/medications/patient/{{patientId}}", "host": ["{{api}}"], "path": ["medications","patient","{{patientId}}"] } } },
+        { "name": "Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"medicationName\": \"Ibuprofeno\",\n  \"dosage\": \"400 mg\",\n  \"frequency\": \"Cada 8 hs\",\n  \"duration\": \"5 días\",\n  \"startDate\": \"2025-11-15T00:00:00Z\",\n  \"endDate\": \"2025-11-20T00:00:00Z\",\n  \"instructions\": \"Tomar con comida\"\n}" }, "url": { "raw": "{{api}}/medications", "host": ["{{api}}"], "path": ["medications"] } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"}, {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"dosage\": \"600 mg\"\n}" }, "url": { "raw": "{{api}}/medications/{{medicationId}}", "host": ["{{api}}"], "path": ["medications","{{medicationId}}"] } } },
+        { "name": "Discontinue", "request": { "method": "PATCH", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": { "raw": "{{api}}/medications/{{medicationId}}/discontinue", "host": ["{{api}}"], "path": ["medications","{{medicationId}}","discontinue"] } } }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "api", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "patientId", "value": "100" },
+    { "key": "professionalId", "value": "45" },
+    { "key": "appointmentId", "value": "123" },
+    { "key": "historyId", "value": "1" },
+    { "key": "diagnosisId", "value": "1" },
+    { "key": "allergyId", "value": "1" },
+    { "key": "medicationId", "value": "1" }
+  ]
+}
+

@@ -239,13 +239,13 @@ where ""ID_USUARIOS""=@id";
 
         private string BuildConfirmationUrl(int userId, string token)
         {
-            var frontUrl = configuration["EmailConfirmation:FrontendConfirmUrl"];
-            var baseUrl = configuration["BaseUrl"] ?? "http://localhost:5000";
-            var backendUrl = $"{baseUrl.TrimEnd('/')}/api/auth/confirm-email?uid={userId}&token={token}";
+            string? frontUrl = configuration["EmailConfirmation:FrontendConfirmUrl"];
+            string baseUrl = configuration["BaseUrl"] ?? "http://localhost:5000";
+            string backendUrl = $"{baseUrl.TrimEnd('/')}/api/auth/confirm-email?uid={userId}&token={token}";
 
             if (!string.IsNullOrWhiteSpace(frontUrl))
             {
-                var separator = frontUrl.Contains('?') ? '&' : '?';
+                char separator = frontUrl.Contains('?') ? '&' : '?';
                 return $"{frontUrl}{separator}uid={userId}&token={token}";
             }
 
@@ -259,7 +259,8 @@ where ""ID_USUARIOS""=@id";
 
         private int GetCooldownSeconds()
         {
-            return int.TryParse(configuration["EmailConfirmation:ResendCooldownSeconds"], out var seconds) ? seconds : 60;
+            int seconds;
+            return int.TryParse(configuration["EmailConfirmation:ResendCooldownSeconds"], out seconds) ? seconds : 60;
         }
     }
 }

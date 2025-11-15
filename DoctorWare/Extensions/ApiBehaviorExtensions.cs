@@ -17,7 +17,7 @@ namespace DoctorWare.Extensions
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
-                    var errors = context.ModelState
+                    object errors = context.ModelState
                         .Where(e => e.Value is not null && e.Value.Errors.Count > 0)
                         .Select(kvp => new
                         {
@@ -26,7 +26,7 @@ namespace DoctorWare.Extensions
                         })
                         .ToArray();
 
-                    var response = new ApiResponse<object>(false, errors, "La solicitud es inválida.", "validation_error");
+                    ApiResponse<object> response = new ApiResponse<object>(false, errors, "La solicitud es inválida.", "validation_error");
                     return new BadRequestObjectResult(response);
                 };
             });

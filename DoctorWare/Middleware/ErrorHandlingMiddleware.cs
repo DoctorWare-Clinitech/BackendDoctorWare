@@ -78,8 +78,9 @@ namespace DoctorWare.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = status;
 
-            var payload = new ApiResponse<object>(false,
-                env.IsDevelopment() ? new { detail = ex.Message, stackTrace = ex.StackTrace } : null,
+            object? data = env.IsDevelopment() ? new { detail = ex.Message, stackTrace = ex.StackTrace } : null;
+            ApiResponse<object> payload = new ApiResponse<object>(false,
+                data,
                 message,
                 code);
 

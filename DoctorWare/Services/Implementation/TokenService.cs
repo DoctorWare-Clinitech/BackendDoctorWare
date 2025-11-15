@@ -23,19 +23,20 @@ namespace DoctorWare.Services.Implementation
         /// <param name="role">Rol opcional para claims.</param>
         public (string accessToken, DateTime expiresAt) GenerateAccessToken(USUARIOS user, string? fullName = null, string? role = null)
         {
-            var jwtSection = configuration.GetSection("Jwt");
-            var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
-            var issuer = jwtSection["Issuer"] ?? "DoctorWare";
-            var audience = jwtSection["Audience"] ?? "DoctorWare.Client";
-            var minutes = int.TryParse(jwtSection["AccessTokenMinutes"], out var m) ? m : 60;
+            IConfigurationSection jwtSection = configuration.GetSection("Jwt");
+            string secret = jwtSection["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
+            string issuer = jwtSection["Issuer"] ?? "DoctorWare";
+            string audience = jwtSection["Audience"] ?? "DoctorWare.Client";
+            int m;
+            int minutes = int.TryParse(jwtSection["AccessTokenMinutes"], out m) ? m : 60;
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var now = DateTime.UtcNow;
-            var expires = now.AddMinutes(minutes);
+            DateTime now = DateTime.UtcNow;
+            DateTime expires = now.AddMinutes(minutes);
 
-            var claims = new List<Claim>
+            List<Claim> claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, user.ID_USUARIOS.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.EMAIL),
@@ -55,7 +56,7 @@ namespace DoctorWare.Services.Implementation
                 claims.Add(new Claim("role", role));
             }
 
-            var token = new JwtSecurityToken(
+            JwtSecurityToken token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
@@ -64,7 +65,7 @@ namespace DoctorWare.Services.Implementation
                 signingCredentials: creds
             );
 
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
             return (tokenString, expires);
         }
 
@@ -75,19 +76,20 @@ namespace DoctorWare.Services.Implementation
         /// <param name="role">Rol opcional para claims.</param>
         public (string refreshToken, DateTime expiresAt) GenerateRefreshToken(USUARIOS user, string? role = null)
         {
-            var jwtSection = configuration.GetSection("Jwt");
-            var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
-            var issuer = jwtSection["Issuer"] ?? "DoctorWare";
-            var audience = jwtSection["Audience"] ?? "DoctorWare.Client";
-            var minutes = int.TryParse(jwtSection["RefreshTokenMinutes"], out var m) ? m : 60 * 24 * 7;
+            IConfigurationSection jwtSection = configuration.GetSection("Jwt");
+            string secret = jwtSection["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
+            string issuer = jwtSection["Issuer"] ?? "DoctorWare";
+            string audience = jwtSection["Audience"] ?? "DoctorWare.Client";
+            int m2;
+            int minutes = int.TryParse(jwtSection["RefreshTokenMinutes"], out m2) ? m2 : 60 * 24 * 7;
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var now = DateTime.UtcNow;
-            var expires = now.AddMinutes(minutes);
+            DateTime now = DateTime.UtcNow;
+            DateTime expires = now.AddMinutes(minutes);
 
-            var claims = new List<Claim>
+            List<Claim> claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, user.ID_USUARIOS.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.EMAIL),
@@ -102,7 +104,7 @@ namespace DoctorWare.Services.Implementation
                 claims.Add(new Claim("role", role));
             }
 
-            var token = new JwtSecurityToken(
+            JwtSecurityToken token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
@@ -111,7 +113,7 @@ namespace DoctorWare.Services.Implementation
                 signingCredentials: creds
             );
 
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
             return (tokenString, expires);
         }
 
@@ -120,8 +122,9 @@ namespace DoctorWare.Services.Implementation
         /// </summary>
         public int GetAccessTokenTtlSeconds()
         {
-            var jwtSection = configuration.GetSection("Jwt");
-            var minutes = int.TryParse(jwtSection["AccessTokenMinutes"], out var m) ? m : 60;
+            IConfigurationSection jwtSection = configuration.GetSection("Jwt");
+            int m;
+            int minutes = int.TryParse(jwtSection["AccessTokenMinutes"], out m) ? m : 60;
             return minutes * 60;
         }
     }

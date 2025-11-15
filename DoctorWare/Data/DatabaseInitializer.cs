@@ -114,7 +114,7 @@ namespace DoctorWare.Data
             logger.LogInformation(LogMessages.DATABASE_INFO, dbInfo.DatabaseName, dbInfo.User);
             logger.LogInformation(LogMessages.TABLES_FOUND, tables.Count());
 
-            foreach (var table in tables)
+            foreach (string table in tables)
             {
                 logger.LogInformation(LogMessages.TABLE_NAME, table);
             }

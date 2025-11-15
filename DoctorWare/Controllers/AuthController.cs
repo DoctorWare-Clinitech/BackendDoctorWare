@@ -210,7 +210,8 @@ namespace DoctorWare.Controllers
                 string? sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                           ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
                           ?? principal.FindFirst("sub")?.Value;
-                if (string.IsNullOrWhiteSpace(sub) || !int.TryParse(sub, out var userId))
+                int userId;
+                if (string.IsNullOrWhiteSpace(sub) || !int.TryParse(sub, out userId))
                 {
                     throw new UnauthorizedAccessException(ErrorMessages.INVALID_REFRESH_TOKEN);
                 }
@@ -300,7 +301,7 @@ namespace DoctorWare.Controllers
                 throw new DoctorWare.Exceptions.BadRequestException(ErrorMessages.BAD_REQUEST);
             }
 
-            var result = await emailConfirmationService.ConfirmAsync(uid, token, cancellationToken);
+            DoctorWare.DTOs.Response.EmailConfirmationResult result = await emailConfirmationService.ConfirmAsync(uid, token, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(redirectBase))
             {
@@ -336,9 +337,9 @@ namespace DoctorWare.Controllers
         public async Task<IActionResult> ResendConfirmation([FromBody] DoctorWare.DTOs.Requests.ResendConfirmationRequest request, CancellationToken cancellationToken)
         {
             string email = request.Email.Trim().ToLowerInvariant();
-            var genericOk = Ok(new { message = "Si el email está registrado y no confirmado, enviaremos un enlace de confirmación." });
+            IActionResult genericOk = Ok(new { message = "Si el email está registrado y no confirmado, enviaremos un enlace de confirmación." });
 
-            var result = await emailConfirmationService.ResendAsync(email, cancellationToken);
+            DoctorWare.DTOs.Response.ResendConfirmationResult result = await emailConfirmationService.ResendAsync(email, cancellationToken);
 
             if (result.Status == ResendConfirmationStatus.CooldownActive)
             {

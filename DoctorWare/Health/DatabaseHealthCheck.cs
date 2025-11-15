@@ -23,7 +23,7 @@ namespace DoctorWare.Health
             try
             {
                 using IDbConnection con = factory.CreateConnection();
-                var result = await con.ExecuteScalarAsync<int>("SELECT 1");
+                int result = await con.ExecuteScalarAsync<int>("SELECT 1");
                 return result == 1
                     ? HealthCheckResult.Healthy("DB OK")
                     : HealthCheckResult.Unhealthy("DB respondió distinto a 1");

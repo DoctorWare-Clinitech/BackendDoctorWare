@@ -63,7 +63,7 @@ namespace DoctorWare.Repositories.Implementation
                 order by ur.""FECHA_CREACION"" desc
                 limit 1";
 
-            var result = await con.QueryFirstOrDefaultAsync<string?>(new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
+            string? result = await con.QueryFirstOrDefaultAsync<string?>(new CommandDefinition(sql, new { userId }, cancellationToken: cancellationToken));
             return string.IsNullOrWhiteSpace(result) ? null : result.Trim();
         }
     }

@@ -45,6 +45,13 @@ constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ITokenService, Doc
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailSender, DoctorWare.Services.Implementation.SmtpEmailSender>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IEmailConfirmationService, DoctorWare.Services.Implementation.EmailConfirmationService>();
 constructor.Services.AddScoped<DoctorWare.Services.Interfaces.ISpecialtyService, DoctorWare.Services.Implementation.SpecialtyService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IAppointmentsService, DoctorWare.Services.Implementation.AppointmentsService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IProfessionalsService, DoctorWare.Services.Implementation.ProfessionalsService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IPatientsService, DoctorWare.Services.Implementation.PatientsService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IMedicalHistoryService, DoctorWare.Services.Implementation.MedicalHistoryService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IDiagnosesService, DoctorWare.Services.Implementation.DiagnosesService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IAllergiesService, DoctorWare.Services.Implementation.AllergiesService>();
+constructor.Services.AddScoped<DoctorWare.Services.Interfaces.IMedicationsService, DoctorWare.Services.Implementation.MedicationsService>();
 
 // ========================================
 // CORS (Lee los orígenes permitidos según ambiente)
@@ -110,8 +117,8 @@ constructor.Services.AddSwaggerGen(c =>
     });
 
     // Incluir comentarios XML para Swagger (controllers y tipos)
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
     {
         c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
@@ -132,10 +139,10 @@ constructor.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var jwt = constructor.Configuration.GetSection("Jwt");
-    var secret = jwt["Secret"] ?? "dev-secret-change";
-    var issuer = jwt["Issuer"] ?? "DoctorWare";
-    var audience = jwt["Audience"] ?? "DoctorWare.Client";
+    IConfigurationSection jwt = constructor.Configuration.GetSection("Jwt");
+    string secret = jwt["Secret"] ?? "dev-secret-change";
+    string issuer = jwt["Issuer"] ?? "DoctorWare";
+    string audience = jwt["Audience"] ?? "DoctorWare.Client";
 
     options.MapInboundClaims = false;
     options.RequireHttpsMetadata = false;
@@ -250,8 +257,11 @@ app.UseAuthorization();
 // Respuestas JSON homogéneas para códigos de estado sin excepción (404, 405, etc.)
 app.UseStatusCodePages(async context =>
 {
-    var response = context.HttpContext.Response;
-    if (response.HasStarted) return;
+    Microsoft.AspNetCore.Http.HttpResponse response = context.HttpContext.Response;
+    if (response.HasStarted)
+    {
+        return;
+    }
     response.ContentType = "application/json";
 
     string code = response.StatusCode switch
@@ -271,7 +281,7 @@ app.UseStatusCodePages(async context =>
         _ => "Ha ocurrido un error"
     };
 
-    var payload = new ApiResponse<object>(false, null, message, code);
+    ApiResponse<object> payload = new ApiResponse<object>(false, null, message, code);
     await response.WriteAsJsonAsync(payload);
 });
 try
@@ -283,7 +293,7 @@ catch (ReflectionTypeLoadException ex)
     Log.Fatal(ex, "ReflectionTypeLoadException al mapear controllers");
     if (ex.LoaderExceptions is not null)
     {
-        foreach (var lex in ex.LoaderExceptions)
+        foreach (Exception lex in ex.LoaderExceptions)
         {
             Log.Fatal(lex, "LoaderException: {Mensaje}", lex.Message);
         }

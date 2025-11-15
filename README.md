@@ -2,6 +2,18 @@
 
 Backend ASP.NET Core + Dapper + PostgreSQL.
 
+Documentación de consumo para frontend: ver `BackendDoctorWare/API_CONTRACT.md`.
+
+Guía completa de uso/desarrollo (incluye DRY con bases): `BackendDoctorWare/DoctorWare/docs/USAGE.md`.
+Guía para frontend (consumo de API): `BackendDoctorWare/DoctorWare/docs/FRONTEND_API.md`.
+Colecciones para clientes HTTP:
+- Postman: `BackendDoctorWare/DoctorWare/docs/collections/DoctorWare.postman_collection.json`
+- Insomnia: `BackendDoctorWare/DoctorWare/docs/collections/DoctorWare.insomnia.yaml`
+
+Cómo importar
+- Postman: Import → File → seleccionar el `.postman_collection.json`. Variables predefinidas: `api`, `token`, `patientId`, etc. Ejecuta "Auth → Login" para setear `token`.
+- Insomnia: Import/Export → Import Data → From File → seleccionar el `.insomnia.yaml`.
+
 ## Cómo ejecutar
 - Configura la base de datos: `BackendDoctorWare/DoctorWare/appsettings.Development.json` → `ConnectionStrings:ConexionPredeterminada`.
 - Ejecuta en `http://localhost:3000`:
@@ -176,6 +188,61 @@ Autenticación
 Utilidad
 - GET `/health` → estado de salud de la API/DB.
 - GET `/` → información básica de la API.
+
+Contrato de API detallado para frontend: `BackendDoctorWare/API_CONTRACT.md`.
+
+Especialidades y Profesionales
+- GET `/api/specialties` → lista de especialidades (id, nombre)
+- GET `/api/specialties/{id}/subspecialties` → sub‑especialidades de una especialidad
+- GET `/api/professionals?specialtyId=&name=` → lista de profesionales (incluye `userId` asociado)
+
+Turnos (Appointments)
+- GET `/api/appointments` → lista de turnos (filtros opcionales: `professionalId` [ID de usuario], `patientId`, `startDate`, `endDate`, `status`, `type`)
+- GET `/api/appointments/{id}` → turno por id
+- POST `/api/appointments` → crea un turno
+- PUT `/api/appointments/{id}` → actualiza campos (fecha/hora/duración/estado/tipo/motivo/notas/observaciones)
+- DELETE `/api/appointments/{id}` → cancela un turno
+- GET `/api/appointments/stats` → estadísticas agregadas (acepta `professionalId`)
+
+Notas
+- El filtro `professionalId` espera el ID de usuario (JWT `sub`) y el backend lo traduce internamente al `ID_PROFESIONALES` correspondiente.
+- Estados mapeados (DB → Front): Programado→`scheduled`, Confirmado→`confirmed`, En Espera→`in_progress`, Atendido→`completed`, Cancelado→`cancelled`, Ausente→`no_show`.
+- Tipos mapeados (DB → Front): Consulta→`first_visit`, Seguimiento→`follow_up`, Estudio→`specialist`, Cirugía/Control General/Vacunación→`routine`.
+
+Pacientes
+- GET `/api/patients` → lista con filtros (`name`, `dni`, `email`, `phone`, `professionalId`, `isActive`)
+- GET `/api/patients/{id}` → paciente por id
+- POST `/api/patients` → crea paciente (crea `PERSONAS` y `PACIENTES`); usa `professionalId` (ID de usuario del profesional) para asignar médico de cabecera
+- PUT `/api/patients/{id}` → actualiza datos básicos, contacto, seguro, notas, activo
+- DELETE `/api/patients/{id}` → elimina paciente
+- GET `/api/patients/summary` → resumen básico por profesional
+- GET `/api/patients/{id}/history` → alias de historia clínica del paciente
+
+Historia Clínica
+- GET `/api/medical-history/patient/{patientId}` → entradas de historia clínica
+- GET `/api/medical-history/{id}` → entrada por id
+- POST `/api/medical-history` → crea entrada; almacena `type` y `attachments` en JSON de `ADJUNTOS`
+- PUT `/api/medical-history/{id}` → actualiza campos y adjuntos
+- DELETE `/api/medical-history/{id}` → elimina entrada
+
+Diagnósticos / Alergias / Medicación
+- Diagnósticos
+  - GET `/api/diagnoses/patient/{patientId}`
+  - POST `/api/diagnoses`
+  - PUT `/api/diagnoses/{id}`
+  - Nota: se persisten como entradas de `HISTORIAS_CLINICAS` con `ADJUNTOS` JSON (`type: 'diagnosis'`, `code`, `name`, `severity`, `diagnosisDate`, `status`, `notes`).
+- Alergias
+  - GET `/api/allergies/patient/{patientId}`
+  - POST `/api/allergies`
+  - PUT `/api/allergies/{id}`
+  - PATCH `/api/allergies/{id}/deactivate`
+  - Nota: se usa `PACIENTE_ALERGIAS` + `ALERGIAS`; metadatos en `DETALLES` JSON (`type`, `severity`, `symptoms`, `diagnosedDate`, `notes`, `active`).
+- Medicación
+  - GET `/api/medications/patient/{patientId}`
+  - POST `/api/medications`
+  - PUT `/api/medications/{id}`
+  - PATCH `/api/medications/{id}/discontinue`
+  - Nota: se persisten como entradas de `HISTORIAS_CLINICAS` con `ADJUNTOS` JSON (`type: 'medication'`, `medicationName`, `dosage`, `frequency`, `duration`, `startDate`, `endDate`, `instructions`, `active`).
 
 ## Configuración relevante (Development)
 - Archivo: `BackendDoctorWare/DoctorWare/appsettings.Development.json`

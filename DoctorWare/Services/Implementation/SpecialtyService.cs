@@ -25,5 +25,13 @@ namespace DoctorWare.Services.Implementation
             List<SpecialtyDto> list = queryResult.ToList();
             return list;
         }
+
+        public async Task<List<DoctorWare.DTOs.Response.SubSpecialtyDto>> GetSubSpecialtiesAsync(int specialtyId, CancellationToken ct)
+        {
+            using IDbConnection con = factory.CreateConnection();
+            const string sql = "select \"ID_SUB_ESPECIALIDADES\" as Id, \"NOMBRE\" as Nombre, \"ID_ESPECIALIDADES\" as SpecialtyId from public.\"SUB_ESPECIALIDADES\" where \"ID_ESPECIALIDADES\" = @id order by \"NOMBRE\"";
+            IEnumerable<DoctorWare.DTOs.Response.SubSpecialtyDto> result = await con.QueryAsync<DoctorWare.DTOs.Response.SubSpecialtyDto>(sql, new { id = specialtyId });
+            return result.ToList();
+        }
     }
 }

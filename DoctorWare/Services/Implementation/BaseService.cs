@@ -52,7 +52,7 @@ namespace DoctorWare.Services.Implementation
         {
             await ValidateAsync(entity);
             await BeforeSaveAsync(entity);
-            var created = await Repository.InsertAsync(entity, cancellationToken);
+            T created = await Repository.InsertAsync(entity, cancellationToken);
             await AfterSaveAsync(created);
             return created;
         }

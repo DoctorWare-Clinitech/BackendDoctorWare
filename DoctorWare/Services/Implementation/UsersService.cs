@@ -131,7 +131,7 @@ namespace DoctorWare.Services.Implementation
 
         public async Task<string> ResolvePrimaryRoleAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var rawRole = await usuariosRepository.GetLatestRoleCodeAsync(userId, cancellationToken);
+            string? rawRole = await usuariosRepository.GetLatestRoleCodeAsync(userId, cancellationToken);
             if (string.IsNullOrWhiteSpace(rawRole))
             {
                 return "patient";

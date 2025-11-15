@@ -70,10 +70,10 @@ namespace DoctorWare.Repositories.Implementation
         {
             using IDbConnection con = CreateConnection();
             int offset = (page - 1) * pageSize;
-            var itemsEnumerable = await con.QueryAsync<T>($"select {SelectColumns} from {Table} order by {Key} offset @offset limit @limit",
+            IEnumerable<T> itemsEnumerable = await con.QueryAsync<T>($"select {SelectColumns} from {Table} order by {Key} offset @offset limit @limit",
                 new { offset, limit = pageSize });
             int total = await con.ExecuteScalarAsync<int>($"select count(*) from {Table}");
-            var items = itemsEnumerable.ToList();
+            List<T> items = itemsEnumerable.ToList();
             return new DoctorWare.DTOs.Response.PagedResult<T>(items, total, page, pageSize);
         }
 

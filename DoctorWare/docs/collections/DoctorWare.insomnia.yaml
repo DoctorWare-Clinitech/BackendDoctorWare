@@ -1,0 +1,483 @@
+_type: export
+__export_format: 4
+__export_date: 2025-11-15T00:00:00.000Z
+__export_source: DoctorWare
+resources:
+  - _id: wrk_doctorware
+    _type: workspace
+    name: DoctorWare API
+  - _id: env_doctorware
+    _type: environment
+    parentId: wrk_doctorware
+    name: Base Environment
+    data:
+      api: http://localhost:3000/api
+      token: ""
+      patientId: "100"
+      professionalId: "45"
+      appointmentId: "123"
+      historyId: "1"
+      diagnosisId: "1"
+      allergyId: "1"
+      medicationId: "1"
+  # Auth
+  - _id: req_auth_login
+    _type: request
+    parentId: wrk_doctorware
+    name: Auth - Login
+    method: POST
+    url: "{{ _.api }}/auth/login"
+    body:
+      mimeType: application/json
+      text: |-
+        {"email":"user@test.com","password":"123456"}
+    headers:
+      - name: Content-Type
+        value: application/json
+  - _id: req_auth_me
+    _type: request
+    parentId: wrk_doctorware
+    name: Auth - Me
+    method: GET
+    url: "{{ _.api }}/auth/me"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_auth_refresh
+    _type: request
+    parentId: wrk_doctorware
+    name: Auth - Refresh
+    method: POST
+    url: "{{ _.api }}/auth/refresh"
+    headers:
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"refreshToken":"{{ _.refreshToken }}"}
+  # Specialties
+  - _id: req_specs_list
+    _type: request
+    parentId: wrk_doctorware
+    name: Specialties - List
+    method: GET
+    url: "{{ _.api }}/specialties"
+  - _id: req_specs_sub
+    _type: request
+    parentId: wrk_doctorware
+    name: Specialties - Subspecialties by Id
+    method: GET
+    url: "{{ _.api }}/specialties/1/subspecialties"
+  # Professionals
+  - _id: req_prof_list
+    _type: request
+    parentId: wrk_doctorware
+    name: Professionals - List
+    method: GET
+    url: "{{ _.api }}/professionals?specialtyId=1&name=ana"
+  - _id: req_prof_get
+    _type: request
+    parentId: wrk_doctorware
+    name: Professionals - Get by Id
+    method: GET
+    url: "{{ _.api }}/professionals/1"
+  # Patients
+  - _id: req_pat_list
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - List
+    method: GET
+    url: "{{ _.api }}/patients?name=juan"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_pat_get
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - Get by Id
+    method: GET
+    url: "{{ _.api }}/patients/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_pat_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - Create
+    method: POST
+    url: "{{ _.api }}/patients"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "name":"Juan Pérez",
+          "email":"juan@example.com",
+          "phone":"11...",
+          "dni":"30123456",
+          "dateOfBirth":"1990-05-02T00:00:00Z",
+          "gender":"male",
+          "address":{"street":"Calle 123","city":"CABA","state":"BA","zipCode":"1000","country":"AR"},
+          "emergencyContact":{"name":"Ana","phone":"...","relationship":"Esposa"},
+          "medicalInsurance":{"provider":"OSDE","planName":"310","memberNumber":"ABC"},
+          "professionalId":"{{ _.professionalId }}"
+        }
+  - _id: req_pat_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - Update
+    method: PUT
+    url: "{{ _.api }}/patients/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"notes":"Observación"}
+  - _id: req_pat_delete
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - Delete
+    method: DELETE
+    url: "{{ _.api }}/patients/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_pat_summary
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - Summary
+    method: GET
+    url: "{{ _.api }}/patients/summary"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_pat_history
+    _type: request
+    parentId: wrk_doctorware
+    name: Patients - History (alias)
+    method: GET
+    url: "{{ _.api }}/patients/{{ _.patientId }}/history"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  # Appointments
+  - _id: req_app_list
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - List
+    method: GET
+    url: "{{ _.api }}/appointments?professionalId={{ _.professionalId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_app_get
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - Get by Id
+    method: GET
+    url: "{{ _.api }}/appointments/{{ _.appointmentId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_app_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - Create
+    method: POST
+    url: "{{ _.api }}/appointments"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "patientId":"{{ _.patientId }}",
+          "professionalId":"{{ _.professionalId }}",
+          "date":"2025-11-15T00:00:00Z",
+          "startTime":"09:00",
+          "duration":30,
+          "type":"first_visit",
+          "reason":"Control anual",
+          "notes":"Traer estudios"
+        }
+  - _id: req_app_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - Update
+    method: PUT
+    url: "{{ _.api }}/appointments/{{ _.appointmentId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"status":"confirmed"}
+  - _id: req_app_cancel
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - Cancel
+    method: DELETE
+    url: "{{ _.api }}/appointments/{{ _.appointmentId }}?reason=No%20asiste"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_app_stats
+    _type: request
+    parentId: wrk_doctorware
+    name: Appointments - Stats
+    method: GET
+    url: "{{ _.api }}/appointments/stats?professionalId={{ _.professionalId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  # Medical History
+  - _id: req_mh_by_patient
+    _type: request
+    parentId: wrk_doctorware
+    name: Medical History - By Patient
+    method: GET
+    url: "{{ _.api }}/medical-history/patient/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_mh_get
+    _type: request
+    parentId: wrk_doctorware
+    name: Medical History - Get by Id
+    method: GET
+    url: "{{ _.api }}/medical-history/{{ _.historyId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_mh_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Medical History - Create
+    method: POST
+    url: "{{ _.api }}/medical-history"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "patientId":"{{ _.patientId }}",
+          "appointmentId":"{{ _.appointmentId }}",
+          "type":"consultation",
+          "date":"2025-11-15T13:00:00Z",
+          "title":"Consulta general",
+          "description":"Dolor torácico",
+          "diagnosis":"Gastroenteritis",
+          "treatment":"Reposo",
+          "observations":"Reevaluar 48h",
+          "attachments":[]
+        }
+  - _id: req_mh_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Medical History - Update
+    method: PUT
+    url: "{{ _.api }}/medical-history/{{ _.historyId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"observations":"Actualizado"}
+  - _id: req_mh_delete
+    _type: request
+    parentId: wrk_doctorware
+    name: Medical History - Delete
+    method: DELETE
+    url: "{{ _.api }}/medical-history/{{ _.historyId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  # Diagnoses
+  - _id: req_dx_by_patient
+    _type: request
+    parentId: wrk_doctorware
+    name: Diagnoses - By Patient
+    method: GET
+    url: "{{ _.api }}/diagnoses/patient/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_dx_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Diagnoses - Create
+    method: POST
+    url: "{{ _.api }}/diagnoses"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "patientId":"{{ _.patientId }}",
+          "appointmentId":"{{ _.appointmentId }}",
+          "code":"J10",
+          "name":"Gripe",
+          "description":"Cuadro febril",
+          "severity":"moderate",
+          "diagnosisDate":"2025-11-15T13:00:00Z",
+          "status":"active",
+          "notes":"Indicar reposo"
+        }
+  - _id: req_dx_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Diagnoses - Update
+    method: PUT
+    url: "{{ _.api }}/diagnoses/{{ _.diagnosisId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"notes":"Control en 1 semana"}
+  # Allergies
+  - _id: req_al_by_patient
+    _type: request
+    parentId: wrk_doctorware
+    name: Allergies - By Patient
+    method: GET
+    url: "{{ _.api }}/allergies/patient/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_al_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Allergies - Create
+    method: POST
+    url: "{{ _.api }}/allergies"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "patientId":"{{ _.patientId }}",
+          "allergen":"Penicilina",
+          "type":"medication",
+          "severity":"high",
+          "symptoms":"Urticaria",
+          "diagnosedDate":"2020-01-01T00:00:00Z",
+          "notes":"Evitar betalactámicos"
+        }
+  - _id: req_al_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Allergies - Update
+    method: PUT
+    url: "{{ _.api }}/allergies/{{ _.allergyId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {"severity":"moderate"}
+  - _id: req_al_deactivate
+    _type: request
+    parentId: wrk_doctorware
+    name: Allergies - Deactivate
+    method: PATCH
+    url: "{{ _.api }}/allergies/{{ _.allergyId }}/deactivate"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  # Medications
+  - _id: req_md_by_patient
+    _type: request
+    parentId: wrk_doctorware
+    name: Medications - By Patient
+    method: GET
+    url: "{{ _.api }}/medications/patient/{{ _.patientId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+  - _id: req_md_create
+    _type: request
+    parentId: wrk_doctorware
+    name: Medications - Create
+    method: POST
+    url: "{{ _.api }}/medications"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "patientId":"{{ _.patientId }}",
+          "appointmentId":"{{ _.appointmentId }}",
+          "medicationName":"Ibuprofeno",
+          "dosage":"400 mg",
+          "frequency":"Cada 8 hs",
+          "duration":"5 días",
+          "startDate":"2025-11-15T00:00:00Z",
+          "endDate":"2025-11-20T00:00:00Z",
+          "instructions":"Tomar con comida"
+        }
+  - _id: req_md_update
+    _type: request
+    parentId: wrk_doctorware
+    name: Medications - Update
+    method: PUT
+    url: "{{ _.api }}/medications/{{ _.medicationId }}"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+      - name: Content-Type
+        value: application/json
+    body:
+      mimeType: application/json
+    text: |-
+      {"dosage":"600 mg"}
+  - _id: req_md_discontinue
+    _type: request
+    parentId: wrk_doctorware
+    name: Medications - Discontinue
+    method: PATCH
+    url: "{{ _.api }}/medications/{{ _.medicationId }}/discontinue"
+    headers:
+      - name: Authorization
+        value: "Bearer {{ _.token }}"
+

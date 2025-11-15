@@ -18,23 +18,25 @@ namespace DoctorWare.Services.Implementation
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken = default)
         {
-            var smtpSection = configuration.GetSection("Email:Smtp");
-            var host = smtpSection["Host"] ?? "localhost";
-            var port = int.TryParse(smtpSection["Port"], out var p) ? p : 25;
-            var enableSsl = bool.TryParse(smtpSection["EnableSsl"], out var ssl) && ssl;
-            var user = smtpSection["User"] ?? string.Empty;
-            var password = smtpSection["Password"] ?? string.Empty;
-            var fromEmail = smtpSection["FromEmail"] ?? "no-reply@localhost";
-            var fromName = smtpSection["FromName"] ?? "DoctorWare";
+            IConfigurationSection smtpSection = configuration.GetSection("Email:Smtp");
+            string host = smtpSection["Host"] ?? "localhost";
+            int p;
+            int port = int.TryParse(smtpSection["Port"], out p) ? p : 25;
+            bool ssl;
+            bool enableSsl = bool.TryParse(smtpSection["EnableSsl"], out ssl) && ssl;
+            string user = smtpSection["User"] ?? string.Empty;
+            string password = smtpSection["Password"] ?? string.Empty;
+            string fromEmail = smtpSection["FromEmail"] ?? "no-reply@localhost";
+            string fromName = smtpSection["FromName"] ?? "DoctorWare";
 
-            using var message = new MailMessage();
+            using MailMessage message = new MailMessage();
             message.To.Add(new MailAddress(toEmail));
             message.From = new MailAddress(fromEmail, fromName);
             message.Subject = subject;
             message.IsBodyHtml = true;
             message.Body = htmlBody;
 
-            using var client = new SmtpClient(host, port)
+            using SmtpClient client = new SmtpClient(host, port)
             {
                 EnableSsl = enableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
@@ -54,4 +56,3 @@ namespace DoctorWare.Services.Implementation
         }
     }
 }
-
