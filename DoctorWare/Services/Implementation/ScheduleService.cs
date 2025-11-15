@@ -10,7 +10,7 @@ using DoctorWare.Data.Interfaces;
 using DoctorWare.DTOs.Requests.Schedule;
 using DoctorWare.DTOs.Response.Frontend;
 using DoctorWare.Exceptions;
-using DoctorWare.Services.Implementation.Helpers;
+using DoctorWare.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace DoctorWare.Services.Implementation

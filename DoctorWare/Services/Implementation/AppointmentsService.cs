@@ -1,5 +1,6 @@
 using Dapper;
 using DoctorWare.Data.Interfaces;
+using DoctorWare.Helpers;
 using DoctorWare.DTOs.Requests.Appointments;
 using DoctorWare.DTOs.Response.Appointments;
 using DoctorWare.Services.Implementation.Helpers;

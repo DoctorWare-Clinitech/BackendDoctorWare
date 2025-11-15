@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Dapper;
 using DoctorWare.Exceptions;
 
-namespace DoctorWare.Services.Implementation.Helpers
+namespace DoctorWare.Helpers
 {
-    internal static class ProfessionalResolver
+    public static class ProfessionalResolver
     {
         private const string Sql = @"
             select p.""ID_PROFESIONALES""
@@ -32,6 +32,11 @@ namespace DoctorWare.Services.Implementation.Helpers
 
         public static async Task<int> ResolveRequiredAsync(IDbConnection con, string professionalUserId, CancellationToken ct, IDbTransaction? tx = null)
         {
+            if (string.IsNullOrWhiteSpace(professionalUserId) || !int.TryParse(professionalUserId, out int _))
+            {
+                throw new BadRequestException("Identificador de profesional inválido.");
+            }
+
             int? id = await TryResolveAsync(con, professionalUserId, ct, tx);
             if (!id.HasValue)
             {

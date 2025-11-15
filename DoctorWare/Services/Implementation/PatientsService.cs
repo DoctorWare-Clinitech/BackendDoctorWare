@@ -2,7 +2,7 @@ using Dapper;
 using DoctorWare.Data.Interfaces;
 using DoctorWare.DTOs.Requests.Patients;
 using DoctorWare.DTOs.Response.Patients;
-using DoctorWare.Services.Implementation.Helpers;
+using DoctorWare.Helpers;
 using DoctorWare.Services.Interfaces;
 using System.Data;
 using System;
