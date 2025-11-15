@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../UnitTestDoctorWare/UnitTestDoctorWare.csproj" Id="bd2cfa8a-6004-46b7-a631-1d8bb4dc8970" />
   <Project Path="DoctorWare.csproj" />
 </Solution>

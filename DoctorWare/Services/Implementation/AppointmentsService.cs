@@ -1,5 +1,6 @@
 using Dapper;
 using DoctorWare.Data.Interfaces;
+using DoctorWare.Helpers;
 using DoctorWare.DTOs.Requests.Appointments;
 using DoctorWare.DTOs.Response.Appointments;
 using DoctorWare.Services.Implementation.Helpers;
@@ -30,19 +31,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            // Resolver optional professionalUserId -> ID_PROFESIONALES
-            int? idProfesionales = null;
-            if (!string.IsNullOrWhiteSpace(professionalUserId))
-            {
-                int uidParsed;
-                if (int.TryParse(professionalUserId, out uidParsed))
-                {
-                    const string sqlProf = @"select p.""ID_PROFESIONALES"" from public.""PROFESIONALES"" p
-                                          join public.""USUARIOS"" u on u.""ID_PERSONAS"" = p.""ID_PERSONAS""
-                                         where u.""ID_USUARIOS"" = @uid limit 1";
-                    idProfesionales = await con.ExecuteScalarAsync<int?>(sqlProf, new { uid = uidParsed });
-                }
-            }
+            int? idProfesionales = await ProfessionalResolver.TryResolveAsync(con, professionalUserId, ct);
 
             List<string> filters = new List<string>();
             DynamicParameters parameters = new DynamicParameters();
@@ -163,9 +152,7 @@ namespace DoctorWare.Services.Implementation
             {
                 throw new ArgumentException("Invalid patientId");
             }
-            int? idProfesional = await ResolveProfesionalIdFromUserAsync(con, request.ProfessionalId);
-            if (!idProfesional.HasValue)
-                throw new ArgumentException("Invalid professionalId");
+            int idProfesional = await ProfessionalResolver.ResolveRequiredAsync(con, request.ProfessionalId, ct);
 
             string tipoNombre = AppointmentMappingHelper.MapFrontTypeToDb(request.Type);
             string estadoNombre = AppointmentMappingHelper.MapFrontStatusToDb("scheduled");
@@ -303,22 +290,5 @@ namespace DoctorWare.Services.Implementation
             return (total, scheduled, confirmed, completed, cancelled, noShow);
         }
 
-        private static async Task<int?> ResolveProfesionalIdFromUserAsync(IDbConnection con, string professionalUserId)
-        {
-            if (string.IsNullOrWhiteSpace(professionalUserId))
-            {
-                return null;
-            }
-            int uid;
-            if (!int.TryParse(professionalUserId, out uid))
-            {
-                return null;
-            }
-            const string sqlProf = @"select p.""ID_PROFESIONALES"" from public.""PROFESIONALES"" p
-                                      join public.""USUARIOS"" u on u.""ID_PERSONAS"" = p.""ID_PERSONAS""
-                                     where u.""ID_USUARIOS"" = @uid limit 1";
-            int? idProf = await con.ExecuteScalarAsync<int?>(sqlProf, new { uid });
-            return idProf;
-        }
     }
 }

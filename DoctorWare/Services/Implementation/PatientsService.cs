@@ -2,6 +2,7 @@ using Dapper;
 using DoctorWare.Data.Interfaces;
 using DoctorWare.DTOs.Requests.Patients;
 using DoctorWare.DTOs.Response.Patients;
+using DoctorWare.Helpers;
 using DoctorWare.Services.Interfaces;
 using System.Data;
 using System;
@@ -28,18 +29,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int? idProfesional = null;
-            if (!string.IsNullOrWhiteSpace(professionalUserId))
-            {
-                int uidParsed;
-                if (int.TryParse(professionalUserId, out uidParsed))
-                {
-                const string sqlProf = @"select p.""ID_PROFESIONALES"" from public.""PROFESIONALES"" p
-                                          join public.""USUARIOS"" u on u.""ID_PERSONAS"" = p.""ID_PERSONAS""
-                                         where u.""ID_USUARIOS"" = @uid limit 1";
-                    idProfesional = await con.ExecuteScalarAsync<int?>(sqlProf, new { uid = uidParsed });
-                }
-            }
+            int? idProfesional = await ProfessionalResolver.TryResolveAsync(con, professionalUserId, ct);
 
             List<string> filters = new List<string>();
             DynamicParameters p = new DynamicParameters();
@@ -215,18 +205,7 @@ namespace DoctorWare.Services.Implementation
             }, tx);
 
             // Resolver profesional
-            int? idProfesional = null;
-            if (!string.IsNullOrWhiteSpace(request.ProfessionalId))
-            {
-                int uid;
-                if (int.TryParse(request.ProfessionalId, out uid))
-                {
-                    const string sqlProf = @"select p.""ID_PROFESIONALES"" from public.""PROFESIONALES"" p
-                                          join public.""USUARIOS"" u on u.""ID_PERSONAS"" = p.""ID_PERSONAS""
-                                         where u.""ID_USUARIOS"" = @uid limit 1";
-                    idProfesional = await con.ExecuteScalarAsync<int?>(sqlProf, new { uid }, tx);
-                }
-            }
+            int? idProfesional = await ProfessionalResolver.TryResolveAsync(con, request.ProfessionalId, ct, tx);
 
             // Sanguíneo por defecto 'O+'
             int idGrupo = await con.ExecuteScalarAsync<int>("select \"ID_GRUPOS_SANGUINEOS\" from public.\"GRUPOS_SANGUINEOS\" where \"NOMBRE\" = 'O+' limit 1", transaction: tx);

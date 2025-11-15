@@ -10,6 +10,7 @@ using DoctorWare.Data.Interfaces;
 using DoctorWare.DTOs.Requests.Schedule;
 using DoctorWare.DTOs.Response.Frontend;
 using DoctorWare.Exceptions;
+using DoctorWare.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace DoctorWare.Services.Implementation
@@ -29,7 +30,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             logger.LogInformation("Obteniendo configuración de agenda para usuario profesional {UserId} (ID_PROFESIONALES={ProfesionalId})", professionalUserId, idProf);
             int consultationDuration = await GetDefaultDurationAsync(con, idProf, ct);
 
@@ -83,7 +84,7 @@ namespace DoctorWare.Services.Implementation
 
             try
             {
-                int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct, tx);
+                int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct, tx);
 
                 logger.LogInformation("Actualizando configuración de agenda para usuario profesional {UserId} (ID_PROFESIONALES={ProfesionalId})",
                     professionalUserId,
@@ -153,7 +154,7 @@ namespace DoctorWare.Services.Implementation
             using IDbConnection con = factory.CreateConnection();
             con.Open();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             int defaultDuration = await GetDefaultDurationAsync(con, idProf, ct);
 
             TimeSpan start = ParseTime(request.StartTime);
@@ -200,7 +201,7 @@ namespace DoctorWare.Services.Implementation
             using IDbConnection con = factory.CreateConnection();
             con.Open();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             if (!int.TryParse(slotId, out int idSlot))
             {
                 throw new BadRequestException("Identificador de horario inválido.");
@@ -272,7 +273,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             if (!int.TryParse(slotId, out int idSlot))
             {
                 throw new BadRequestException("Identificador de horario inválido.");
@@ -300,7 +301,7 @@ namespace DoctorWare.Services.Implementation
             using IDbConnection con = factory.CreateConnection();
             con.Open();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
 
             DateTime dateOnly = request.Date.Date;
             TimeSpan start = ParseTime(request.StartTime);
@@ -354,7 +355,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             if (!int.TryParse(blockId, out int idBlock))
             {
                 throw new BadRequestException("Identificador de bloqueo inválido.");
@@ -381,7 +382,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             DateTime from = startDate.Date;
             DateTime to = endDate.Date;
 
@@ -435,7 +436,7 @@ namespace DoctorWare.Services.Implementation
         {
             using IDbConnection con = factory.CreateConnection();
 
-            int idProf = await ResolveProfessionalIdAsync(con, professionalUserId, ct);
+            int idProf = await ProfessionalResolver.ResolveRequiredAsync(con, professionalUserId, ct);
             int defaultDuration = await GetDefaultDurationAsync(con, idProf, ct);
             DateTime targetDate = date.Date;
             int dayOfWeek = (int)targetDate.DayOfWeek; // 0=Domingo,...6=Sábado
@@ -541,34 +542,6 @@ namespace DoctorWare.Services.Implementation
                 ocupados);
 
             return ordered;
-        }
-
-        private static async Task<int> ResolveProfessionalIdAsync(IDbConnection con, string professionalUserId, CancellationToken ct, IDbTransaction? tx = null)
-        {
-            if (string.IsNullOrWhiteSpace(professionalUserId))
-            {
-                throw new BadRequestException("Identificador de profesional requerido.");
-            }
-
-            if (!int.TryParse(professionalUserId, out int uid))
-            {
-                throw new BadRequestException("Identificador de profesional inválido.");
-            }
-
-            const string sql = @"
-                select p.""ID_PROFESIONALES""
-                from public.""PROFESIONALES"" p
-                join public.""USUARIOS"" u on u.""ID_PERSONAS"" = p.""ID_PERSONAS""
-                where u.""ID_USUARIOS"" = @uid
-                limit 1;";
-
-            int? idProf = await con.ExecuteScalarAsync<int?>(sql, new { uid }, tx);
-            if (!idProf.HasValue)
-            {
-                throw new NotFoundException("Profesional no encontrado.");
-            }
-
-            return idProf.Value;
         }
 
         private static async Task<int> GetDefaultDurationAsync(IDbConnection con, int idProf, CancellationToken ct)
