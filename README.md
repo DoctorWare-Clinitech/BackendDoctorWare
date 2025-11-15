@@ -6,6 +6,7 @@ Documentación de consumo para frontend: ver `BackendDoctorWare/API_CONTRACT.md`
 
 Guía completa de uso/desarrollo (incluye DRY con bases): `BackendDoctorWare/DoctorWare/docs/USAGE.md`.
 Guía para frontend (consumo de API): `BackendDoctorWare/DoctorWare/docs/FRONTEND_API.md`.
+Guía resumida por endpoint (cómo usar cada ruta): `BackendDoctorWare/docs/ENDPOINTS_USAGE.md`.
 Colecciones para clientes HTTP:
 - Postman: `BackendDoctorWare/DoctorWare/docs/collections/DoctorWare.postman_collection.json`
 - Insomnia: `BackendDoctorWare/DoctorWare/docs/collections/DoctorWare.insomnia.yaml`
