@@ -98,7 +98,7 @@ namespace DoctorWare.Services.Implementation
             IEnumerable<dynamic> rows = await con.QueryAsync(sql, p);
 
             // Obtener datos médicos relacionados (alergias, condiciones, cirugías) por lote
-            int[] idsPacientes = rows.Select(r => (int)r.IdPaciente).ToArray();
+            int[] idsPacientes = rows.Where(r => r.IdPaciente != null).Select(r => (int)r.IdPaciente).ToArray();
             Dictionary<int, List<string>> alergiasPorPaciente = await LoadAlergiasAsync(con, idsPacientes);
             Dictionary<int, List<string>> condicionesPorPaciente = await LoadCondicionesAsync(con, idsPacientes);
             Dictionary<int, List<string>> cirugiasPorPaciente = await LoadCirugiasAsync(con, idsPacientes);

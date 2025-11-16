@@ -82,7 +82,7 @@ namespace DoctorWare.Services.Implementation
                     t.""FECHA"" as Fecha,
                     t.""HORA_INICIO"" as HoraInicio,
                     t.""HORA_FIN"" as HoraFin,
-                    coalesce(t.""DURACION"", p.""DURACION_TURNO_EN_MINUTOS"") as Duracion,
+                    coalesce(t.""DURACION"", prof.""DURACION_TURNO_EN_MINUTOS"") as Duracion,
                     t.""MOTIVO_CONSULTA"" as Motivo,
                     t.""NOTA_ADICIONAL"" as Nota,
                     t.""OBSERVACION_PROFECIONAL"" as ObsProfesional,
