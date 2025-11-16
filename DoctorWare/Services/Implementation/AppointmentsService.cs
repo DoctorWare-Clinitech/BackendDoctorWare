@@ -110,7 +110,16 @@ namespace DoctorWare.Services.Implementation
 
             IEnumerable<dynamic> rows = await con.QueryAsync(sql, parameters);
 
-            List<AppointmentDto> list = rows.Select(r => new AppointmentDto
+            // Filtrar registros con campos críticos null
+            var validRows = rows.Where(r =>
+                r.Fecha != null &&
+                r.HoraInicio != null &&
+                r.HoraFin != null &&
+                r.FechaCreacion != null &&
+                r.UltimaActualizacion != null
+            ).ToList();
+
+            List<AppointmentDto> list = validRows.Select(r => new AppointmentDto
             {
                 Id = Convert.ToString(r.IdTurno),
                 PatientId = Convert.ToString(r.IdPaciente),
