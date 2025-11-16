@@ -1,0 +1,63 @@
+{
+    "BaseUrl": "http://localhost:5001",
+    "ConnectionStrings": {
+        "ConexionPredeterminada": "Host=localhost;Port=5432;Database=DoctorWare;Username=your_username;Password=your_password;Include Error Detail=true"
+    },
+    "Serilog": {
+        "MinimumLevel": {
+            "Default": "Debug",
+            "Override": {
+                "Microsoft": "Information",
+                "Microsoft.AspNetCore": "Warning",
+                "MiProyectoAPI": "Debug"
+            }
+        },
+        "WriteTo": [
+            {
+                "Name": "Console",
+                "Args": {
+                    "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+                }
+            },
+            {
+                "Name": "File",
+                "Args": {
+                    "path": "logs/dev-log-.txt",
+                    "rollingInterval": "Day",
+                    "retainedFileCountLimit": 7
+                }
+            }
+        ]
+    },
+    "Cors": {
+        "AllowedOrigins": [
+            "http://localhost:4200",
+            "http://localhost:4201",
+            "http://localhost:3000"
+        ]
+    },
+    "Jwt": {
+        "Secret": "your-super-secret-key-at-least-32-characters",
+        "Issuer": "DoctorWare",
+        "Audience": "DoctorWare.Client",
+        "AccessTokenMinutes": 60,
+        "RefreshTokenMinutes": 10080
+    },
+    "Email": {
+        "Smtp": {
+            "Host": "smtp.gmail.com",
+            "Port": 587,
+            "EnableSsl": true,
+            "User": "your-email@gmail.com",
+            "Password": "your-app-password",
+            "FromEmail": "your-email@gmail.com",
+            "FromName": "DoctorWare"
+        }
+    },
+    "EmailConfirmation": {
+        "TokenMinutes": 60,
+        "FrontendConfirmUrl": "",
+        "BackendConfirmRedirectUrl": "http://localhost:4200/auth/verify-email",
+        "ResendCooldownSeconds": 60
+    }
+}
