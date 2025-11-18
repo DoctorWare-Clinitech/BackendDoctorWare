@@ -48,6 +48,8 @@ namespace UnitTestDoctorWare.Services
         [Fact]
         public async Task GeneratePasswordResetTokenAsync_UserExists_ReturnsToken()
         {
+            Console.WriteLine("--- PRUEBA: GeneratePasswordResetTokenAsync_UserExists_ReturnsToken ---");
+            Console.WriteLine("QUÉ SE PROBÓ: Generar un token de reseteo de contraseña para un usuario existente.");
             UsersService service = CreateService(out Mock<IUsuariosRepository> usuariosRepo, out Mock<IPersonasRepository> personasRepo);
             USUARIOS usuario = new()
             {
@@ -66,29 +68,39 @@ namespace UnitTestDoctorWare.Services
 
             PasswordResetTokenResult? result = await service.GeneratePasswordResetTokenAsync("user@test.com", CancellationToken.None);
 
+            Console.WriteLine("QUÉ RESULTADO SE ESPERABA: Un objeto PasswordResetTokenResult no nulo con un token.");
+            Console.WriteLine($"QUÉ RESULTADO SE OBTUVO: {(result is null ? "null" : "Objeto no nulo con token: " + !string.IsNullOrEmpty(result.Token))}");
             result.Should().NotBeNull();
             result!.Email.Should().Be("user@test.com");
             result.FullName.Should().Be("Ana Pérez");
             result.Token.Should().NotBeNullOrWhiteSpace();
             usuariosRepo.Verify(r => r.UpdateAsync(It.Is<USUARIOS>(u => !string.IsNullOrEmpty(u.TOKEN_RECUPERACION)), It.IsAny<CancellationToken>()), Times.Once);
+            Console.WriteLine("--- RESULTADO: CUMPLIDO ---");
         }
 
         [Fact]
         public async Task GeneratePasswordResetTokenAsync_UserNotFound_ReturnsNull()
         {
+            Console.WriteLine("--- PRUEBA: GeneratePasswordResetTokenAsync_UserNotFound_ReturnsNull ---");
+            Console.WriteLine("QUÉ SE PROBÓ: Intentar generar un token de reseteo para un usuario que no existe.");
             UsersService service = CreateService(out Mock<IUsuariosRepository> usuariosRepo, out _);
             usuariosRepo.Setup(r => r.GetByEmailAsync("unknown@test.com", It.IsAny<CancellationToken>()))
                 .ReturnsAsync((USUARIOS?)null);
 
             PasswordResetTokenResult? result = await service.GeneratePasswordResetTokenAsync("unknown@test.com", CancellationToken.None);
 
+            Console.WriteLine("QUÉ RESULTADO SE ESPERABA: null");
+            Console.WriteLine($"QUÉ RESULTADO SE OBTUVO: {(result is null ? "null" : "no-null")}");
             result.Should().BeNull();
             usuariosRepo.Verify(r => r.UpdateAsync(It.IsAny<USUARIOS>(), It.IsAny<CancellationToken>()), Times.Never);
+            Console.WriteLine("--- RESULTADO: CUMPLIDO ---");
         }
 
         [Fact]
         public async Task ResetPasswordAsync_WithValidToken_UpdatesPassword()
         {
+            Console.WriteLine("--- PRUEBA: ResetPasswordAsync_WithValidToken_UpdatesPassword ---");
+            Console.WriteLine("QUÉ SE PROBÓ: Resetear la contraseña utilizando un token válido.");
             UsersService service = CreateService(out Mock<IUsuariosRepository> usuariosRepo, out _);
             const string token = "abc123";
             string tokenHash = ComputeHash(token, "unit-test-secret");
@@ -112,22 +124,39 @@ namespace UnitTestDoctorWare.Services
 
             await service.ResetPasswordAsync(token, "NuevaPass123", CancellationToken.None);
 
+            Console.WriteLine("QUÉ RESULTADO SE ESPERABA: El hash de la contraseña cambia y el token se limpia.");
+            Console.WriteLine($"QUÉ RESULTADO SE OBTUVO: El hash cambió de '{previousHash}' a '{usuario.PASSWORD_HASH}' y el token es '{usuario.TOKEN_RECUPERACION}'.");
             usuario.TOKEN_RECUPERACION.Should().BeEmpty();
             usuario.TOKEN_EXPIRACION.Should().BeNull();
             usuario.PASSWORD_HASH.Should().NotBe(previousHash);
             usuariosRepo.Verify(r => r.UpdateAsync(usuario, It.IsAny<CancellationToken>()), Times.Once);
+            Console.WriteLine("--- RESULTADO: CUMPLIDO ---");
         }
 
         [Fact]
         public async Task ResetPasswordAsync_InvalidToken_Throws()
         {
+            Console.WriteLine("--- PRUEBA: ResetPasswordAsync_InvalidToken_Throws ---");
+            Console.WriteLine("QUÉ SE PROBÓ: Intentar resetear la contraseña con un token inválido.");
             UsersService service = CreateService(out Mock<IUsuariosRepository> usuariosRepo, out _);
             usuariosRepo.Setup(r => r.GetByPasswordResetTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((USUARIOS?)null);
 
             Func<Task> act = () => service.ResetPasswordAsync("bad-token", "NuevaPass123", CancellationToken.None);
 
-            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+            Console.WriteLine("QUÉ RESULTADO SE ESPERABA: Una excepción de tipo UnauthorizedAccessException.");
+            try
+            {
+                await act.Should().ThrowAsync<UnauthorizedAccessException>();
+                Console.WriteLine("QUÉ RESULTADO SE OBTUVO: Se lanzó UnauthorizedAccessException.");
+                Console.WriteLine("--- RESULTADO: CUMPLIDO ---");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"QUÉ RESULTADO SE OBTUVO: Se lanzó una excepción inesperada: {ex.GetType().Name}");
+                Console.WriteLine("--- RESULTADO: NO CUMPLIDO ---");
+                throw;
+            }
             usuariosRepo.Verify(r => r.UpdateAsync(It.IsAny<USUARIOS>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
