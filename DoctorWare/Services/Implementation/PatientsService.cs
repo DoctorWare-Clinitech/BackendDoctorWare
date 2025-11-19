@@ -73,20 +73,20 @@ namespace DoctorWare.Services.Implementation
 
             string sql = $@"
                 select
-                    pa.""ID_PACIENTES"" as IdPaciente,
-                    per.""ID_PERSONAS"" as IdPersona,
+                    pa.""ID_PACIENTES"" as ""IdPaciente"",
+                    per.""ID_PERSONAS"" as ""IdPersona"",
                     per.""NOMBRE"", per.""APELLIDO"",
-                    per.""EMAIL_PRINCIPAL"", coalesce(per.""CELULAR_PRINCIPAL"", per.""TELEFONO_PRINCIPAL"") as Telefono,
+                    per.""EMAIL_PRINCIPAL"", coalesce(per.""CELULAR_PRINCIPAL"", per.""TELEFONO_PRINCIPAL"") as ""Telefono"",
                     per.""NRO_DOCUMENTO"", per.""FECHA_NACIMIENTO"",
-                    gen.""NOMBRE"" as Genero,
+                    gen.""NOMBRE"" as ""Genero"",
                     per.""CALLE"", per.""NUMERO"", per.""LOCALIDAD"", per.""PROVINCIA"", per.""CODIGO_POSTAL"", per.""PAIS"",
                     pa.""CONTACTO_EMERGENCIA_NOMBRE"", pa.""CONTACTO_EMERGENCIA_TELEFONO"", pa.""CONTACTO_EMERGENCIA_RELACION"",
-                    gs.""NOMBRE"" as GrupoSanguineo,
+                    gs.""NOMBRE"" as ""GrupoSanguineo"",
                     pa.""SEGURO_PROVEEDOR"", pa.""SEGURO_PLAN"", pa.""SEGURO_NUMERO_AFILIADO"",
-                    pa.""ID_PROFESIONALES"" as IdProf,
+                    pa.""ID_PROFESIONALES"" as ""IdProf"",
                     pa.""NOTAS_GENERALES"", pa.""ACTIVO"",
                     pa.""FECHA_CREACION"", pa.""ULTIMA_ACTUALIZACION"",
-                    u.""ID_USUARIOS"" as IdUsuarioProf
+                    u.""ID_USUARIOS"" as ""IdUsuarioProf""
                 from public.""PACIENTES"" pa
                 join public.""PERSONAS"" per on per.""ID_PERSONAS"" = pa.""ID_PERSONAS""
                 left join public.""GENEROS"" gen on gen.""ID_GENEROS"" = per.""ID_GENEROS""
@@ -96,7 +96,7 @@ namespace DoctorWare.Services.Implementation
                 order by per.""APELLIDO"", per.""NOMBRE""";
 
             IEnumerable<dynamic> rows = await con.QueryAsync(sql, p);
-
+           
             // Obtener datos médicos relacionados (alergias, condiciones, cirugías) por lote
             // Filtrar registros con IdPaciente null antes de procesarlos
             var validRows = rows.Where(r => r.IdPaciente != null).ToList();
