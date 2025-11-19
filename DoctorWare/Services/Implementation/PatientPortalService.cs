@@ -51,10 +51,17 @@ namespace DoctorWare.Services.Implementation
 
         public async Task<bool> CancelAppointmentAsync(int userId, string appointmentId, string? reason, CancellationToken ct)
         {
-            AppointmentDto? dto = await GetAppointmentAsync(userId, appointmentId, ct);
+            string patientId = await ResolvePatientIdAsync(userId, ct);
+            AppointmentDto? dto = await appointmentsService.GetByIdAsync(appointmentId, ct);
+
             if (dto is null)
             {
-                return false;
+                throw new NotFoundException($"Turno con ID '{appointmentId}' no encontrado.");
+            }
+
+            if (dto.PatientId != patientId)
+            {
+                throw new UnauthorizedAccessException("No tiene permisos para cancelar este turno.");
             }
 
             logger.LogInformation("Paciente {UserId} canceló el turno {AppointmentId}", userId, appointmentId);
