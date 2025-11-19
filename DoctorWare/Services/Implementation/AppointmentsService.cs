@@ -78,26 +78,26 @@ namespace DoctorWare.Services.Implementation
 
             string sql = $@"
                 select
-                    t.""ID_TURNOS"" as IdTurno,
-                    t.""FECHA"" as Fecha,
-                    t.""HORA_INICIO"" as HoraInicio,
-                    t.""HORA_FIN"" as HoraFin,
-                    coalesce(t.""DURACION"", prof.""DURACION_TURNO_EN_MINUTOS"") as Duracion,
-                    t.""MOTIVO_CONSULTA"" as Motivo,
-                    t.""NOTA_ADICIONAL"" as Nota,
-                    t.""OBSERVACION_PROFECIONAL"" as ObsProfesional,
-                    t.""FECHA_CANCELACION"" as FechaCancelacion,
-                    t.""MOTIVO_CANCELACION"" as MotivoCancelacion,
-                    t.""FECHA_CREACION"" as FechaCreacion,
-                    t.""ULTIMA_ACTUALIZACION"" as UltimaActualizacion,
-                    pa.""ID_PACIENTES"" as IdPaciente,
-                    perPac.""NOMBRE"" || ' ' || perPac.""APELLIDO"" as PacienteNombre,
-                    prof.""ID_PROFESIONALES"" as IdProfesional,
-                    u.""ID_USUARIOS"" as IdUsuarioProfesional,
-                    perPro.""NOMBRE"" || ' ' || perPro.""APELLIDO"" as ProfesionalNombre,
-                    et.""NOMBRE"" as EstadoNombre,
-                    tt.""NOMBRE"" as TipoNombre,
-                    t.""ID_USUARIO_CREACION"" as IdUsuarioCreacion
+                    t.""ID_TURNOS"" as ""IdTurno"",
+                    t.""FECHA"" as ""Fecha"",
+                    t.""HORA_INICIO"" as ""HoraInicio"",
+                    t.""HORA_FIN"" as ""HoraFin"",
+                    coalesce(t.""DURACION"", prof.""DURACION_TURNO_EN_MINUTOS"") as ""Duracion"",
+                    t.""MOTIVO_CONSULTA"" as ""Motivo"",
+                    t.""NOTA_ADICIONAL"" as ""Nota"",
+                    t.""OBSERVACION_PROFECIONAL"" as ""ObsProfesional"",
+                    t.""FECHA_CANCELACION"" as ""FechaCancelacion"",
+                    t.""MOTIVO_CANCELACION"" as ""MotivoCancelacion"",
+                    t.""FECHA_CREACION"" as ""FechaCreacion"",
+                    t.""ULTIMA_ACTUALIZACION"" as ""UltimaActualizacion"",
+                    pa.""ID_PACIENTES"" as ""IdPaciente"",
+                    perPac.""NOMBRE"" || ' ' || perPac.""APELLIDO"" as ""PacienteNombre"",
+                    prof.""ID_PROFESIONALES"" as ""IdProfesional"",
+                    u.""ID_USUARIOS"" as ""IdUsuarioProfesional"",
+                    perPro.""NOMBRE"" || ' ' || perPro.""APELLIDO"" as ""ProfesionalNombre"",
+                    et.""NOMBRE"" as ""EstadoNombre"",
+                    tt.""NOMBRE"" as ""TipoNombre"",
+                    t.""ID_USUARIO_CREACION"" as ""IdUsuarioCreacion""
                 from public.""TURNOS"" t
                 join public.""PACIENTES"" pa on pa.""ID_PACIENTES"" = t.""ID_PACIENTES""
                 join public.""PERSONAS"" perPac on perPac.""ID_PERSONAS"" = pa.""ID_PERSONAS""
